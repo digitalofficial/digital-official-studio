@@ -22,11 +22,15 @@ export default async function AdminDashboard() {
     galleryCount = count || 0
   }
 
-  // Media count — for assigned galleries only (or all for admin), excluding deleted
+  // Media count — only from non-deleted galleries, excluding deleted media
   let mediaCount = 0
   if (isAdmin) {
-    const { count } = await admin.from('media_files').select('*', { count: 'exact', head: true }).is('deleted_at', null)
-    mediaCount = count || 0
+    const { data: activeGalleries } = await admin.from('client_galleries').select('id').is('deleted_at', null)
+    const activeIds = activeGalleries?.map((g: any) => g.id) || []
+    if (activeIds.length > 0) {
+      const { count } = await admin.from('media_files').select('*', { count: 'exact', head: true }).in('gallery_id', activeIds).is('deleted_at', null)
+      mediaCount = count || 0
+    }
   } else if (assigned.length > 0) {
     const { count } = await admin.from('media_files').select('*', { count: 'exact', head: true }).in('gallery_id', assigned).is('deleted_at', null)
     mediaCount = count || 0
