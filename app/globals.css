@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-navy: #0d1117;
+  --color-slate-dark: #161d27;
+  --color-card: #1c2433;
+  --color-icy: #7eb8d4;
+  --color-silver: #a8b8c8;
+  --color-text: #e8edf2;
+  --color-muted: #6b7a8d;
+  --color-icy-dim: #5a9ab8;
+  --color-card-hover: #243040;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    background-color: #0d1117;
+    color: #e8edf2;
+  }
+  ::selection {
+    background-color: rgba(126, 184, 212, 0.3);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .glass-card {
+    background: rgba(28, 36, 51, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(126, 184, 212, 0.1);
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #7eb8d4 0%, #5a9ab8 100%);
+    color: #0d1117;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(126, 184, 212, 0.3);
+  }
+  .btn-secondary {
+    border: 1px solid rgba(126, 184, 212, 0.3);
+    color: #7eb8d4;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  .btn-secondary:hover {
+    background: rgba(126, 184, 212, 0.1);
+    border-color: #7eb8d4;
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #7eb8d4 0%, #a8b8c8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+  .animate-delay-100 { animation-delay: 0.1s; }
+  .animate-delay-200 { animation-delay: 0.2s; }
+  .animate-delay-300 { animation-delay: 0.3s; }
+  .animate-delay-400 { animation-delay: 0.4s; }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
