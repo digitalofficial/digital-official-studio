@@ -22,6 +22,47 @@ export async function PUT(
   }
 
   const admin = await createServiceRoleClient()
+
+  // When restoring media, also restore its parent gallery if it was deleted
+  if (body.restore === true) {
+    const { data: mediaRecord } = await admin
+      .from('media_files')
+      .select('gallery_id')
+      .eq('id', id)
+      .single()
+
+    if (mediaRecord?.gallery_id) {
+      const { data: gallery } = await admin
+        .from('client_galleries')
+        .select('id, deleted_at, created_by')
+        .eq('id', mediaRecord.gallery_id)
+        .single()
+
+      // Restore the gallery if it's also in trash
+      if (gallery?.deleted_at) {
+        await admin
+          .from('client_galleries')
+          .update({ deleted_at: null, deleted_by: null })
+          .eq('id', gallery.id)
+      }
+
+      // Re-add gallery to creator's assigned_galleries
+      if (gallery?.created_by) {
+        const { data: profile } = await admin
+          .from('profiles')
+          .select('assigned_galleries')
+          .eq('id', gallery.created_by)
+          .single()
+        const arr = profile?.assigned_galleries || []
+        if (!arr.includes(mediaRecord.gallery_id)) {
+          await admin.from('profiles').update({
+            assigned_galleries: [...arr, mediaRecord.gallery_id],
+          }).eq('id', gallery.created_by)
+        }
+      }
+    }
+  }
+
   const { data, error } = await admin
     .from('media_files')
     .update(updates)
