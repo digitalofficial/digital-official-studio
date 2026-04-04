@@ -28,23 +28,42 @@ export async function GET() {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Get accurate media counts (excluding deleted files)
+  // Get accurate media counts and thumbnail previews (excluding deleted files)
   if (data && data.length > 0) {
     const galIds = data.map((g: any) => g.id)
     const { data: mediaRows } = await admin
+      .from('media_files')
+      .select('gallery_id, file_url, file_type')
+      .in('gallery_id', galIds)
+      .eq('file_type', 'photo')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+
+    const countMap: Record<string, number> = {}
+    const thumbMap: Record<string, string[]> = {}
+
+    // Also count videos
+    const { data: allMedia } = await admin
       .from('media_files')
       .select('gallery_id')
       .in('gallery_id', galIds)
       .is('deleted_at', null)
 
-    const countMap: Record<string, number> = {}
-    mediaRows?.forEach((m: any) => {
+    allMedia?.forEach((m: any) => {
       countMap[m.gallery_id] = (countMap[m.gallery_id] || 0) + 1
+    })
+
+    mediaRows?.forEach((m: any) => {
+      if (!thumbMap[m.gallery_id]) thumbMap[m.gallery_id] = []
+      if (thumbMap[m.gallery_id].length < 5) {
+        thumbMap[m.gallery_id].push(m.file_url)
+      }
     })
 
     return NextResponse.json(data.map((g: any) => ({
       ...g,
       media_files: [{ count: countMap[g.id] || 0 }],
+      thumbnails: thumbMap[g.id] || [],
     })))
   }
 
