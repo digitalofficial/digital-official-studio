@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import PortalClient from './PortalClient'
 import PortalNav from './PortalNav'
+import PortalQuickUpload from './PortalQuickUpload'
 
 export default async function ClientPortal() {
   const supabase = await createServerSupabaseClient()
@@ -91,6 +92,11 @@ export default async function ClientPortal() {
       <PortalNav displayName={profile.display_name || profile.email} role={profile.role} />
 
       <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
+        {/* Quick Upload */}
+        <div className="flex justify-end mb-4">
+          <PortalQuickUpload displayName={profile.display_name || ''} />
+        </div>
+
         {/* Dashboard Stats */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           {stats.map((stat) => (
