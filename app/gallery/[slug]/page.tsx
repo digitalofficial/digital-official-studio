@@ -54,10 +54,28 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
 
   const { data: media } = await supabase
     .from('media_files')
-    .select('id, file_url, file_type, caption')
+    .select('id, file_url, file_type, caption, name')
     .eq('gallery_id', gallery.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  return <GalleryView gallery={gallery} media={media || []} />
+  // Fetch creator's watermark config
+  let watermarkConfig = undefined
+  if (gallery.watermark_enabled && !gallery.is_paid && gallery.created_by) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('watermark_text, watermark_image_url, watermark_style, watermark_opacity')
+      .eq('id', gallery.created_by)
+      .single()
+    if (profile) {
+      watermarkConfig = {
+        watermarkText: profile.watermark_text || 'DIGITAL OFFICIAL STUDIO',
+        watermarkImageUrl: profile.watermark_image_url || '',
+        watermarkStyle: profile.watermark_style || 'angled-repeat',
+        watermarkOpacity: profile.watermark_opacity ?? 20,
+      }
+    }
+  }
+
+  return <GalleryView gallery={gallery} media={media || []} watermarkEnabled={gallery.watermark_enabled} isPaid={gallery.is_paid} watermarkConfig={watermarkConfig} />
 }

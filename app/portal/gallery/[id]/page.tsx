@@ -13,6 +13,8 @@ interface Gallery {
   event_name: string
   slug: string
   is_public: boolean
+  watermark_enabled: boolean
+  is_paid: boolean
   media: MediaFile[]
 }
 
@@ -21,6 +23,7 @@ interface MediaFile {
   file_url: string
   file_type: string
   caption: string | null
+  name: string | null
   is_portfolio: boolean
   uploaded_by: string | null
 }
@@ -33,10 +36,13 @@ export default function PortalGalleryDetail() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
   const [uploadCaption, setUploadCaption] = useState('')
+  const [uploadName, setUploadName] = useState('')
   const [copiedLink, setCopiedLink] = useState(false)
+  const [editingName, setEditingName] = useState<string | null>(null)
+  const [editNameValue, setEditNameValue] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
   const [sharedBy, setSharedBy] = useState('')
@@ -97,12 +103,14 @@ export default function PortalGalleryDetail() {
           fileUrl: publicUrl,
           fileType,
           caption: uploadCaption,
+          name: uploadName,
           isPortfolio: false,
         }),
       })
     }
 
     setUploadCaption('')
+    setUploadName('')
     setUploading(false)
     setUploadProgress(null)
     fetchGallery()
@@ -213,29 +221,58 @@ export default function PortalGalleryDetail() {
               <span className={gallery.is_public ? ' text-green-400' : ' text-muted'}> {gallery.is_public ? 'Public' : 'Private'}</span>
             </p>
           </div>
-          <button
-            onClick={copyLink}
-            className="text-xs px-4 py-2 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            {copiedLink ? 'Copied!' : 'Copy Gallery Link'}
-          </button>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={gallery.watermark_enabled || false}
+                onChange={async (e) => {
+                  await fetch(`/api/admin/galleries/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ watermarkEnabled: e.target.checked }),
+                  })
+                  fetchGallery()
+                }}
+                className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
+              />
+              <span className="text-xs text-silver">Watermark</span>
+            </label>
+            <button
+              onClick={copyLink}
+              className="text-xs px-4 py-2 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              {copiedLink ? 'Copied!' : 'Copy Gallery Link'}
+            </button>
+          </div>
         </div>
 
         {/* Upload Section */}
         <div className="glass-card rounded-xl p-6 mb-8">
           <h2 className="text-text font-medium mb-4">Upload Photos & Videos</h2>
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs text-silver mb-1.5">Caption (optional)</label>
-              <input
-                value={uploadCaption}
-                onChange={(e) => setUploadCaption(e.target.value)}
-                className={inputClass}
-                placeholder="Photo caption"
-              />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-silver mb-1.5">File Name (optional)</label>
+                <input
+                  value={uploadName}
+                  onChange={(e) => setUploadName(e.target.value)}
+                  className={inputClass}
+                  placeholder="File name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-silver mb-1.5">Caption (optional)</label>
+                <input
+                  value={uploadCaption}
+                  onChange={(e) => setUploadCaption(e.target.value)}
+                  className={inputClass}
+                  placeholder="Photo caption"
+                />
+              </div>
             </div>
             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/10 rounded-lg cursor-pointer hover:border-icy/30 transition-colors">
               <div className="text-center">
@@ -286,7 +323,11 @@ export default function PortalGalleryDetail() {
                 {file.file_type === 'photo' ? (
                   <div
                     className="relative aspect-square cursor-pointer"
-                    onClick={() => setLightbox(file.file_url)}
+                    onClick={() => {
+                      const photoFiles = gallery.media.filter(f => f.file_type === 'photo')
+                      const idx = photoFiles.findIndex(f => f.id === file.id)
+                      setLightboxIndex(idx >= 0 ? idx : 0)
+                    }}
                   >
                     <Image
                       src={file.file_url}
@@ -299,7 +340,11 @@ export default function PortalGalleryDetail() {
                 ) : (
                   <div
                     className="relative aspect-video bg-card cursor-pointer"
-                    onClick={() => setLightbox(file.file_url)}
+                    onClick={() => {
+                      const photoFiles = gallery.media.filter(f => f.file_type === 'photo')
+                      const idx = photoFiles.findIndex(f => f.id === file.id)
+                      setLightboxIndex(idx >= 0 ? idx : 0)
+                    }}
                   >
                     <video src={file.file_url} className="w-full h-full object-cover" preload="metadata" />
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -311,16 +356,62 @@ export default function PortalGalleryDetail() {
                     </div>
                   </div>
                 )}
-                <div className="p-3 flex items-center justify-between">
-                  {file.caption && <p className="text-muted text-xs truncate flex-1">{file.caption}</p>}
-                  {file.uploaded_by && file.uploaded_by === userId && (
-                    <button
-                      onClick={() => deleteMedia(file.id)}
-                      className="text-xs text-red-400 hover:text-red-300 transition-colors ml-auto"
+                <div className="p-3">
+                  {/* Inline name editing */}
+                  {editingName === file.id ? (
+                    <div className="flex items-center gap-1 mb-1">
+                      <input
+                        value={editNameValue}
+                        onChange={(e) => setEditNameValue(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            await fetch(`/api/admin/media/${file.id}`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ name: editNameValue }),
+                            })
+                            setEditingName(null)
+                            fetchGallery()
+                          }
+                          if (e.key === 'Escape') setEditingName(null)
+                        }}
+                        className="flex-1 bg-navy border border-white/10 rounded px-2 py-1 text-text text-xs focus:outline-none focus:border-icy/50"
+                        autoFocus
+                        placeholder="File name"
+                      />
+                      <button
+                        onClick={async () => {
+                          await fetch(`/api/admin/media/${file.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: editNameValue }),
+                          })
+                          setEditingName(null)
+                          fetchGallery()
+                        }}
+                        className="text-icy text-xs hover:underline"
+                      >Save</button>
+                    </div>
+                  ) : (
+                    <p
+                      className="text-text text-xs mb-1 truncate cursor-pointer hover:text-icy transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') }}
+                      title="Click to rename"
                     >
-                      Delete
-                    </button>
+                      {file.name || <span className="text-muted italic">Add name...</span>}
+                    </p>
                   )}
+                  <div className="flex items-center justify-between">
+                    {file.caption && <p className="text-muted text-xs truncate flex-1">{file.caption}</p>}
+                    {file.uploaded_by && file.uploaded_by === userId && (
+                      <button
+                        onClick={() => deleteMedia(file.id)}
+                        className="text-xs text-red-400 hover:text-red-300 transition-colors ml-auto"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -456,7 +547,13 @@ export default function PortalGalleryDetail() {
         </div>
       )}
 
-      {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
+      {lightboxIndex !== null && (
+        <Lightbox
+          items={gallery.media.filter(f => f.file_type === 'photo').map(f => ({ src: f.file_url, name: f.name || undefined }))}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import ShareMasonry from './ShareMasonry'
 import SharePasswordForm from './SharePasswordForm'
+import ShareShareButtons from './ShareShareButtons'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,7 +28,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
 
   const { data: share } = await supabase
     .from('shared_links')
-    .select('*, client_galleries(event_name, client_name)')
+    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
     .eq('id', id)
     .single()
 
@@ -63,12 +64,37 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
 
   const { data: photos } = await supabase
     .from('media_files')
-    .select('id, file_url, file_type, caption')
+    .select('id, file_url, file_type, caption, name')
     .in('id', share.photo_ids)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   const gallery = share.client_galleries as any
+
+  // Fetch creator's watermark config
+  let watermarkConfig = undefined
+  if (gallery?.watermark_enabled && !gallery?.is_paid) {
+    const { data: parentGallery } = await supabase
+      .from('client_galleries')
+      .select('created_by')
+      .eq('id', share.gallery_id)
+      .single()
+    if (parentGallery?.created_by) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('watermark_text, watermark_image_url, watermark_style, watermark_opacity')
+        .eq('id', parentGallery.created_by)
+        .single()
+      if (profile) {
+        watermarkConfig = {
+          watermarkText: profile.watermark_text || 'DIGITAL OFFICIAL STUDIO',
+          watermarkImageUrl: profile.watermark_image_url || '',
+          watermarkStyle: profile.watermark_style || 'angled-repeat',
+          watermarkOpacity: profile.watermark_opacity ?? 20,
+        }
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-navy">
@@ -87,10 +113,18 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
             <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-card text-muted">Private</span>
           )}
           <p className="text-muted mt-2">{photos?.length || 0} photos</p>
+          <div className="flex justify-center mt-4">
+            <ShareShareButtons />
+          </div>
         </div>
 
         {photos && photos.length > 0 ? (
-          <ShareMasonry items={photos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))} />
+          <ShareMasonry
+            items={photos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))}
+            watermarkEnabled={gallery?.watermark_enabled || false}
+            isPaid={gallery?.is_paid || false}
+            watermarkConfig={watermarkConfig}
+          />
         ) : (
           <div className="text-center py-16">
             <p className="text-muted">No photos to display.</p>

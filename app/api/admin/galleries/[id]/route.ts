@@ -47,6 +47,8 @@ export async function PUT(
   if (body.slug) updates.slug = body.slug
   if (body.category) updates.category = body.category
   if (typeof body.isPublic === 'boolean') updates.is_public = body.isPublic
+  if (typeof body.watermarkEnabled === 'boolean') updates.watermark_enabled = body.watermarkEnabled
+  if (typeof body.isPaid === 'boolean') updates.is_paid = body.isPaid
   if (body.password) {
     updates.password_hash = await bcrypt.hash(body.password, 10)
     updates.password_plain = body.password

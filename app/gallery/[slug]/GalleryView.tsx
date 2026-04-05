@@ -1,6 +1,8 @@
 'use client'
 
 import MasonryGrid from '@/components/MasonryGrid'
+import ShareButtons from '@/components/ShareButtons'
+import { type WatermarkConfig } from '@/components/WatermarkOverlay'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
@@ -17,9 +19,18 @@ interface MediaItem {
   file_url: string
   file_type: 'photo' | 'video'
   caption: string | null
+  name?: string | null
 }
 
-export default function GalleryView({ gallery, media }: { gallery: Gallery; media: MediaItem[] }) {
+interface Props {
+  gallery: Gallery
+  media: MediaItem[]
+  watermarkEnabled?: boolean
+  isPaid?: boolean
+  watermarkConfig?: WatermarkConfig
+}
+
+export default function GalleryView({ gallery, media, watermarkEnabled = false, isPaid = false, watermarkConfig }: Props) {
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showShareModal, setShowShareModal] = useState(false)
@@ -95,6 +106,7 @@ export default function GalleryView({ gallery, media }: { gallery: Gallery; medi
             Back
           </Link>
           <div className="flex items-center gap-2">
+            <ShareButtons url={typeof window !== 'undefined' ? window.location.href : ''} text={`Check out ${gallery.event_name} by Digital Official Studio`} />
             <button
               onClick={copyGalleryLink}
               className="text-xs px-3 py-1.5 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors flex items-center gap-1.5"
@@ -263,7 +275,7 @@ export default function GalleryView({ gallery, media }: { gallery: Gallery; medi
             )}
           </>
         ) : (
-          <MasonryGrid items={media} showDownload />
+          <MasonryGrid items={media} showDownload watermarkEnabled={watermarkEnabled} isPaid={isPaid} watermarkConfig={watermarkConfig} />
         )}
 
         <div className="text-center mt-16 pt-8 border-t border-white/5">

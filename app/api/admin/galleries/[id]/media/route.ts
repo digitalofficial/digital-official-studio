@@ -11,7 +11,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { fileUrl, fileType, caption, isPortfolio } = body
+  const { fileUrl, fileType, caption, isPortfolio, name } = body
 
   if (!fileUrl || !fileType) {
     return NextResponse.json({ error: 'Missing file info' }, { status: 400 })
@@ -22,6 +22,7 @@ export async function POST(
     file_url: fileUrl,
     file_type: fileType,
     caption: caption || null,
+    name: name || null,
     is_portfolio: isPortfolio || false,
     uploaded_by: user.id,
   }).select().single()

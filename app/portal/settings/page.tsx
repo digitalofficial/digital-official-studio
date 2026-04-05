@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import WatermarkSettings from '@/components/WatermarkSettings'
 
 export default function PortalSettings() {
   const [deleting, setDeleting] = useState(false)
@@ -53,6 +54,13 @@ export default function PortalSettings() {
         </Link>
 
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl text-text mb-8">Account Settings</h1>
+
+        {/* Watermark Settings */}
+        <div className="glass-card rounded-xl p-6 mb-6">
+          <h2 className="text-text font-medium mb-2">Watermark Settings</h2>
+          <p className="text-muted text-sm mb-4">Configure how watermarks appear on your galleries when enabled.</p>
+          <WatermarkSettings />
+        </div>
 
         {/* Sign Out */}
         <div className="glass-card rounded-xl p-6 mb-6">

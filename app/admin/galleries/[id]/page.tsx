@@ -14,6 +14,8 @@ interface Gallery {
   slug: string
   is_public: boolean
   category: string
+  watermark_enabled: boolean
+  is_paid: boolean
   media: MediaFile[]
 }
 
@@ -22,6 +24,7 @@ interface MediaFile {
   file_url: string
   file_type: string
   caption: string | null
+  name: string | null
   is_portfolio: boolean
   uploaded_by: string | null
 }
@@ -33,12 +36,15 @@ export default function GalleryDetail() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
   const [uploadCaption, setUploadCaption] = useState('')
+  const [uploadName, setUploadName] = useState('')
   const [uploadPortfolio, setUploadPortfolio] = useState(false)
+  const [editingName, setEditingName] = useState<string | null>(null)
+  const [editNameValue, setEditNameValue] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkLoading, setBulkLoading] = useState(false)
   const [role, setRole] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
-  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [sharedBy, setSharedBy] = useState('')
   const [shareUrl, setShareUrl] = useState('')
@@ -113,12 +119,14 @@ export default function GalleryDetail() {
           fileUrl: publicUrl,
           fileType,
           caption: uploadCaption,
+          name: uploadName,
           isPortfolio: uploadPortfolio,
         }),
       })
     }
 
     setUploadCaption('')
+    setUploadName('')
     setUploadPortfolio(false)
     setUploading(false)
     setUploadProgress(null)
@@ -284,6 +292,42 @@ export default function GalleryDetail() {
             </a>
           </p>
         </div>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={gallery.watermark_enabled || false}
+              onChange={async (e) => {
+                await fetch(`/api/admin/galleries/${id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ watermarkEnabled: e.target.checked }),
+                })
+                fetchGallery()
+              }}
+              className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
+            />
+            <span className="text-sm text-silver">Watermark</span>
+          </label>
+          {role === 'admin' && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={gallery.is_paid || false}
+                onChange={async (e) => {
+                  await fetch(`/api/admin/galleries/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isPaid: e.target.checked }),
+                  })
+                  fetchGallery()
+                }}
+                className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
+              />
+              <span className="text-sm text-silver">Client Paid</span>
+            </label>
+          )}
+        </div>
       </div>
 
       {/* Upload Section */}
@@ -291,6 +335,15 @@ export default function GalleryDetail() {
         <h2 className="text-text font-medium mb-4">Upload Files</h2>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-silver mb-1.5">File Name (optional)</label>
+              <input
+                value={uploadName}
+                onChange={(e) => setUploadName(e.target.value)}
+                className={inputClass}
+                placeholder="File name"
+              />
+            </div>
             <div>
               <label className="block text-xs text-silver mb-1.5">Caption (optional)</label>
               <input
@@ -437,7 +490,11 @@ export default function GalleryDetail() {
 
               {/* Photo - click opens lightbox */}
               {file.file_type === 'photo' ? (
-                <div className="relative aspect-square cursor-pointer" onClick={() => setLightbox(file.file_url)}>
+                <div className="relative aspect-square cursor-pointer" onClick={() => {
+                  const photoFiles = gallery.media.filter(f => f.file_type === 'photo')
+                  const idx = photoFiles.findIndex(f => f.id === file.id)
+                  setLightboxIndex(idx >= 0 ? idx : 0)
+                }}>
                   <Image
                     src={file.file_url}
                     alt={file.caption || ''}
@@ -459,6 +516,50 @@ export default function GalleryDetail() {
                 </div>
               )}
               <div className="p-3">
+                {/* Inline name editing */}
+                {editingName === file.id ? (
+                  <div className="flex items-center gap-1 mb-2">
+                    <input
+                      value={editNameValue}
+                      onChange={(e) => setEditNameValue(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter') {
+                          await fetch(`/api/admin/media/${file.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: editNameValue }),
+                          })
+                          setEditingName(null)
+                          fetchGallery()
+                        }
+                        if (e.key === 'Escape') setEditingName(null)
+                      }}
+                      className="flex-1 bg-navy border border-white/10 rounded px-2 py-1 text-text text-xs focus:outline-none focus:border-icy/50"
+                      autoFocus
+                      placeholder="File name"
+                    />
+                    <button
+                      onClick={async () => {
+                        await fetch(`/api/admin/media/${file.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: editNameValue }),
+                        })
+                        setEditingName(null)
+                        fetchGallery()
+                      }}
+                      className="text-icy text-xs hover:underline"
+                    >Save</button>
+                  </div>
+                ) : (
+                  <p
+                    className="text-text text-xs mb-1 truncate cursor-pointer hover:text-icy transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') }}
+                    title="Click to rename"
+                  >
+                    {file.name || <span className="text-muted italic">Add name...</span>}
+                  </p>
+                )}
                 {file.caption && <p className="text-muted text-xs mb-2 truncate">{file.caption}</p>}
                 <div className="flex items-center justify-between">
                   {role === 'admin' && (
@@ -606,7 +707,13 @@ export default function GalleryDetail() {
         </div>
       )}
 
-      {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
+      {lightboxIndex !== null && (
+        <Lightbox
+          items={gallery.media.filter(f => f.file_type === 'photo').map(f => ({ src: f.file_url, name: f.name || undefined }))}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   )
 }
