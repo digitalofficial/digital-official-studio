@@ -30,24 +30,47 @@ export default function WatermarkOverlay({ config = DEFAULT_WATERMARK, size = 's
   const rotation = isAngled ? -30 : 0
 
   if (isRepeat) {
-    const count = size === 'lg' ? 40 : 20
-    const gap = size === 'lg' ? 'gap-16' : 'gap-12'
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-        <div
-          className={`absolute inset-[-50%] flex flex-wrap items-center justify-center ${gap}`}
-          style={{ transform: `rotate(${rotation}deg)` }}
-        >
-          {Array.from({ length: count }).map((_, i) => (
-            <WatermarkUnit
-              key={i}
-              text={watermarkText}
-              imageUrl={watermarkImageUrl}
-              opacity={opacity}
-              large={size === 'lg'}
-            />
-          ))}
+    const rows = size === 'lg' ? 8 : 5
+    const cols = size === 'lg' ? 5 : 3
+    const gap = size === 'lg' ? 'gap-y-12 gap-x-16' : 'gap-y-8 gap-x-12'
+
+    if (isAngled) {
+      return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          <div
+            className={`absolute inset-[-50%] flex flex-wrap items-center justify-center ${gap}`}
+            style={{ transform: `rotate(${rotation}deg)` }}
+          >
+            {Array.from({ length: rows * cols }).map((_, i) => (
+              <WatermarkUnit
+                key={i}
+                text={watermarkText}
+                imageUrl={watermarkImageUrl}
+                opacity={opacity}
+                large={size === 'lg'}
+              />
+            ))}
+          </div>
         </div>
+      )
+    }
+
+    // Horizontal repeat — rows of text across the image
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none select-none flex flex-col justify-around py-4">
+        {Array.from({ length: rows }).map((_, row) => (
+          <div key={row} className="flex justify-around">
+            {Array.from({ length: cols }).map((_, col) => (
+              <WatermarkUnit
+                key={col}
+                text={watermarkText}
+                imageUrl={watermarkImageUrl}
+                opacity={opacity}
+                large={size === 'lg'}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     )
   }
