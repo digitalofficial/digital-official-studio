@@ -332,7 +332,7 @@ export default function PortalGalleryDetail() {
                 )}
                 <div className="p-3">
                   {/* Inline name editing - creator only */}
-                  {(gallery.created_by && gallery.created_by === userId) && editingName === file.id ? (
+                  {(userId) && editingName === file.id ? (
                     <div className="flex items-center gap-1 mb-1">
                       <input
                         value={editNameValue}
@@ -368,16 +368,16 @@ export default function PortalGalleryDetail() {
                     </div>
                   ) : (
                     <p
-                      className={`text-text text-xs mb-1 truncate ${(gallery.created_by && gallery.created_by === userId) ? 'cursor-pointer hover:text-icy transition-colors' : ''}`}
-                      onClick={(gallery.created_by && gallery.created_by === userId) ? (e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') } : undefined}
-                      title={(gallery.created_by && gallery.created_by === userId) ? 'Click to rename' : undefined}
+                      className={`text-text text-xs mb-1 truncate ${(userId) ? 'cursor-pointer hover:text-icy transition-colors' : ''}`}
+                      onClick={(userId) ? (e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') } : undefined}
+                      title={(userId) ? 'Click to rename' : undefined}
                     >
                       {file.name || ''}
                     </p>
                   )}
                   {file.caption && <p className="text-muted text-xs mb-1 truncate">{file.caption}</p>}
                   <div className="flex items-center justify-between flex-wrap gap-1">
-                    {gallery.created_by && gallery.created_by === userId && (
+                    {userId && (
                       <button
                         onClick={async () => {
                           await fetch(`/api/admin/media/${file.id}`, {
