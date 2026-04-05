@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function POST(
   request: Request,
@@ -17,7 +17,8 @@ export async function POST(
     return NextResponse.json({ error: 'Missing file info' }, { status: 400 })
   }
 
-  const { data, error } = await supabase.from('media_files').insert({
+  const admin = await createServiceRoleClient()
+  const { data, error } = await admin.from('media_files').insert({
     gallery_id: id,
     file_url: fileUrl,
     file_type: fileType,
