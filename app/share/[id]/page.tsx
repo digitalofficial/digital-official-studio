@@ -73,12 +73,38 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
 
   const { data: photos } = await supabase
     .from('media_files')
-    .select('id, file_url, file_type, caption, name')
+    .select('id, file_url, file_type, caption, name, watermark_enabled')
     .in('id', share.photo_ids)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   const gallery = share.client_galleries as any
+
+  // Fetch creator's watermark config if any media has watermark enabled
+  const hasAnyWatermark = (photos || []).some((p: any) => p.watermark_enabled)
+  let watermarkConfig = undefined
+  if (hasAnyWatermark) {
+    const { data: parentGallery } = await supabase
+      .from('client_galleries')
+      .select('created_by')
+      .eq('id', share.gallery_id)
+      .single()
+    if (parentGallery?.created_by) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('watermark_text, watermark_image_url, watermark_style, watermark_opacity')
+        .eq('id', parentGallery.created_by)
+        .single()
+      if (profile) {
+        watermarkConfig = {
+          watermarkText: profile.watermark_text || 'DIGITAL OFFICIAL STUDIO',
+          watermarkImageUrl: profile.watermark_image_url || '',
+          watermarkStyle: profile.watermark_style || 'angled-repeat',
+          watermarkOpacity: profile.watermark_opacity ?? 20,
+        }
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-navy">
@@ -105,6 +131,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         {photos && photos.length > 0 ? (
           <ShareMasonry
             items={photos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))}
+            watermarkConfig={watermarkConfig}
           />
         ) : (
           <div className="text-center py-16">

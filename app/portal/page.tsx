@@ -79,7 +79,7 @@ export default async function ClientPortal() {
           </Link>
           <div className="flex items-center gap-6">
             <Link href="/portal" className="text-sm text-icy">Galleries</Link>
-            <Link href="/portal/bookings" className="text-sm text-silver hover:text-icy transition-colors">Bookings</Link>
+            {profile.role !== 'client' && <Link href="/portal/bookings" className="text-sm text-silver hover:text-icy transition-colors">Bookings</Link>}
             <Link href="/portal/collections" className="text-sm text-silver hover:text-icy transition-colors">Collections</Link>
             <Link href="/portal/settings" className="text-sm text-silver hover:text-icy transition-colors">Settings</Link>
             <span className="text-sm text-muted">{profile.display_name || profile.email}</span>
@@ -88,7 +88,7 @@ export default async function ClientPortal() {
       </nav>
 
       {/* Mobile bottom nav */}
-      <PortalNav displayName={profile.display_name || profile.email} />
+      <PortalNav displayName={profile.display_name || profile.email} role={profile.role} />
 
       <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
         {/* Dashboard Stats */}

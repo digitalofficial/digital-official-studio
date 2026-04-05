@@ -40,6 +40,7 @@ export default function PortalGalleryDetail() {
   const [editingName, setEditingName] = useState<string | null>(null)
   const [editNameValue, setEditNameValue] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
@@ -66,7 +67,7 @@ export default function PortalGalleryDetail() {
   useEffect(() => { fetchGallery() }, [fetchGallery])
 
   useEffect(() => {
-    fetch('/api/auth/profile').then(r => r.json()).then(p => setUserId(p.id)).catch(() => {})
+    fetch('/api/auth/profile').then(r => r.json()).then(p => { setUserId(p.id); setUserRole(p.role) }).catch(() => {})
   }, [])
 
   async function handleUpload(files: FileList | null) {
@@ -331,8 +332,8 @@ export default function PortalGalleryDetail() {
                   </div>
                 )}
                 <div className="p-3">
-                  {/* Inline name editing - creator only */}
-                  {(userId) && editingName === file.id ? (
+                  {/* Inline name editing - photographers/admin only */}
+                  {userRole && userRole !== 'client' && editingName === file.id ? (
                     <div className="flex items-center gap-1 mb-1">
                       <input
                         value={editNameValue}
@@ -368,16 +369,16 @@ export default function PortalGalleryDetail() {
                     </div>
                   ) : (
                     <p
-                      className={`text-text text-xs mb-1 truncate ${(userId) ? 'cursor-pointer hover:text-icy transition-colors' : ''}`}
-                      onClick={(userId) ? (e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') } : undefined}
-                      title={(userId) ? 'Click to rename' : undefined}
+                      className={`text-text text-xs mb-1 truncate ${(userRole && userRole !== 'client') ? 'cursor-pointer hover:text-icy transition-colors' : ''}`}
+                      onClick={(userRole && userRole !== 'client') ? (e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') } : undefined}
+                      title={(userRole && userRole !== 'client') ? 'Click to rename' : undefined}
                     >
                       {file.name || ''}
                     </p>
                   )}
                   {file.caption && <p className="text-muted text-xs mb-1 truncate">{file.caption}</p>}
                   <div className="flex items-center justify-between flex-wrap gap-1">
-                    {userId && (
+                    {userRole && userRole !== 'client' && (
                       <button
                         onClick={async () => {
                           await fetch(`/api/admin/media/${file.id}`, {

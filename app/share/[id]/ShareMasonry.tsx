@@ -1,6 +1,7 @@
 'use client'
 
 import MasonryGrid from '@/components/MasonryGrid'
+import { type WatermarkConfig } from '@/components/WatermarkOverlay'
 
 interface MediaItem {
   id: string
@@ -8,8 +9,14 @@ interface MediaItem {
   file_type: 'photo' | 'video'
   caption: string | null
   name?: string | null
+  watermark_enabled?: boolean
 }
 
-export default function ShareMasonry({ items }: { items: MediaItem[] }) {
-  return <MasonryGrid items={items} />
+interface Props {
+  items: MediaItem[]
+  watermarkConfig?: WatermarkConfig
+}
+
+export default function ShareMasonry({ items, watermarkConfig }: Props) {
+  return <MasonryGrid items={items} watermarkConfig={watermarkConfig} />
 }

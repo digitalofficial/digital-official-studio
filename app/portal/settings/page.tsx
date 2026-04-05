@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -9,8 +9,16 @@ import WatermarkSettings from '@/components/WatermarkSettings'
 export default function PortalSettings() {
   const [deleting, setDeleting] = useState(false)
   const [confirmText, setConfirmText] = useState('')
+  const [role, setRole] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    fetch('/api/auth/profile')
+      .then(r => r.json())
+      .then(p => setRole(p.role))
+      .catch(() => {})
+  }, [])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -55,19 +63,21 @@ export default function PortalSettings() {
 
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl text-text mb-8">Account Settings</h1>
 
-        {/* Watermark Settings */}
-        <div className="glass-card rounded-xl p-6 mb-6">
-          <h2 className="text-text font-medium mb-2">Watermark Settings</h2>
-          <p className="text-muted text-sm mb-4">Configure how watermarks appear on your galleries when enabled.</p>
-          <WatermarkSettings />
-        </div>
-
-        {/* Sign Out */}
+        {/* Sign Out - always visible and prominent */}
         <div className="glass-card rounded-xl p-6 mb-6">
           <h2 className="text-text font-medium mb-2">Sign Out</h2>
           <p className="text-muted text-sm mb-4">Sign out of your account on this device.</p>
-          <button onClick={handleSignOut} className="btn-secondary text-sm !py-2">Sign Out</button>
+          <button onClick={handleSignOut} className="btn-primary text-sm !py-2.5 w-full">Sign Out</button>
         </div>
+
+        {/* Watermark Settings - photographers and admins only */}
+        {role && role !== 'client' && (
+          <div className="glass-card rounded-xl p-6 mb-6">
+            <h2 className="text-text font-medium mb-2">Watermark Settings</h2>
+            <p className="text-muted text-sm mb-4">Configure how watermarks appear on your galleries when enabled.</p>
+            <WatermarkSettings />
+          </div>
+        )}
 
         {/* Delete Account */}
         <div className="glass-card rounded-xl p-6 border border-red-400/20">
