@@ -206,9 +206,9 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
             const remaining = Math.max(0, count - thumbs.length)
 
             return (
-              <div key={g.id} className="glass-card rounded-xl overflow-hidden group hover:ring-1 hover:ring-icy/20 transition-all">
+              <Link key={g.id} href={`/portal/gallery/${g.id}`} className="glass-card rounded-xl overflow-hidden group hover:ring-1 hover:ring-icy/20 transition-all block">
                 {/* Thumbnail mosaic */}
-                <Link href={`/portal/gallery/${g.id}`} className="block">
+                <div>
                   {thumbs.length > 0 ? (
                     <div className="relative h-48 overflow-hidden bg-card">
                       {thumbs.length === 1 && (
@@ -262,7 +262,7 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                       </svg>
                     </div>
                   )}
-                </Link>
+                </div>
 
                 {/* Card content */}
                 <div className="p-5">
@@ -275,10 +275,9 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                       <span className={`text-xs px-2 py-0.5 rounded-full ${g.is_public ? 'bg-green-400/10 text-green-400' : 'bg-card text-muted'}`}>
                         {g.is_public ? 'Public' : 'Private'}
                       </span>
-                      <button onClick={() => handleDeleteGallery(g.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-3" onClick={(e) => e.preventDefault()}>
                     <PrivateToggle
                       isPrivate={!g.is_public}
                       currentPassword={g.password_plain}
@@ -288,13 +287,7 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                       label={g.is_public ? 'Make Private' : 'Make Public'}
                     />
                   </div>
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
-                    <Link
-                      href={`/portal/gallery/${g.id}`}
-                      className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors"
-                    >
-                      Manage
-                    </Link>
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5" onClick={(e) => e.preventDefault()}>
                     <button
                       onClick={() => copyLink(g.slug)}
                       className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors"
@@ -306,7 +299,7 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                     <PasswordReveal password={g.password_plain} />
                   )}
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>

@@ -244,7 +244,7 @@ export default function AdminUsers() {
       ) : (
         <div className="space-y-3">
           {users.map((u) => (
-            <div key={u.id} className="glass-card rounded-lg p-4">
+            <div key={u.id} className="glass-card rounded-lg p-4 cursor-pointer hover:ring-1 hover:ring-icy/20 transition-all" onClick={() => editingId !== u.id && startEdit(u)}>
               {editingId === u.id ? (
                 <div className="space-y-4">
                   <div className="grid sm:grid-cols-3 gap-4">

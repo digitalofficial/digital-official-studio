@@ -192,9 +192,9 @@ export default function AdminGalleries() {
             const remaining = Math.max(0, count - thumbs.length)
 
             return (
-              <div key={g.id} className="glass-card rounded-xl overflow-hidden group hover:ring-1 hover:ring-icy/20 transition-all">
+              <Link key={g.id} href={`/admin/galleries/${g.id}`} className="glass-card rounded-xl overflow-hidden group hover:ring-1 hover:ring-icy/20 transition-all block">
                 {/* Thumbnail mosaic */}
-                <Link href={`/admin/galleries/${g.id}`} className="block">
+                <div>
                   {thumbs.length > 0 ? (
                     <div className="relative h-48 overflow-hidden bg-card">
                       {thumbs.length === 1 && (
@@ -259,15 +259,15 @@ export default function AdminGalleries() {
                       </svg>
                     </div>
                   )}
-                </Link>
+                </div>
 
                 {/* Card content */}
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
-                      <Link href={`/admin/galleries/${g.id}`} className="text-text font-medium hover:text-icy transition-colors block truncate">
+                      <span className="text-text font-medium block truncate">
                         {g.event_name}
-                      </Link>
+                      </span>
                       <p className="text-muted text-sm truncate">{g.client_name}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${g.is_public ? 'bg-green-400/10 text-green-400' : 'bg-white/5 text-muted'}`}>
@@ -299,13 +299,7 @@ export default function AdminGalleries() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-                    <Link
-                      href={`/admin/galleries/${g.id}`}
-                      className="flex-1 text-center px-3 py-2 rounded-lg bg-icy/10 text-icy text-sm hover:bg-icy/20 transition-colors"
-                    >
-                      Manage
-                    </Link>
+                  <div className="flex items-center gap-2 pt-3 border-t border-white/5" onClick={(e) => e.preventDefault()}>
                     {(role === 'admin' || g.created_by === userId) && (
                       <PrivateToggle
                         isPrivate={!g.is_public}
@@ -328,7 +322,7 @@ export default function AdminGalleries() {
                     )}
                   </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
