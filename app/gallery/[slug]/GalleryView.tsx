@@ -71,7 +71,7 @@ export default function GalleryView({ gallery, media, watermarkEnabled = false, 
 
     if (res.ok) {
       const data = await res.json()
-      setShareUrl(`${window.location.origin}/share/${data.id}`)
+      setShareUrl(`${window.location.origin}/share/${data.slug || data.id}`)
     }
     setSharing(false)
   }

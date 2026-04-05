@@ -232,7 +232,7 @@ export default function GalleryDetail() {
 
     if (res.ok) {
       const data = await res.json()
-      setShareUrl(`${window.location.origin}/share/${data.id}`)
+      setShareUrl(`${window.location.origin}/share/${data.slug || data.id}`)
     }
     setSharing(false)
   }
@@ -309,24 +309,6 @@ export default function GalleryDetail() {
             />
             <span className="text-sm text-silver">Watermark</span>
           </label>
-          {role === 'admin' && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={gallery.is_paid || false}
-                onChange={async (e) => {
-                  await fetch(`/api/admin/galleries/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isPaid: e.target.checked }),
-                  })
-                  fetchGallery()
-                }}
-                className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
-              />
-              <span className="text-sm text-silver">Client Paid</span>
-            </label>
-          )}
         </div>
       </div>
 

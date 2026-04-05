@@ -5,17 +5,30 @@ import ShareMasonry from './ShareMasonry'
 import SharePasswordForm from './SharePasswordForm'
 import ShareShareButtons from './ShareShareButtons'
 
+async function findShare(supabase: any, id: string) {
+  // Try slug first, then fall back to UUID
+  const { data: bySlug } = await supabase
+    .from('shared_links')
+    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
+    .eq('slug', id)
+    .single()
+  if (bySlug) return bySlug
+
+  const { data: byId } = await supabase
+    .from('shared_links')
+    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
+    .eq('id', id)
+    .single()
+  return byId || null
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServiceRoleClient()
 
-  const { data: share } = await supabase
-    .from('shared_links')
-    .select('gallery_id, shared_by, client_galleries(event_name)')
-    .eq('id', id)
-    .single()
+  const share = await findShare(supabase, id)
 
-  const galleryName = (share?.client_galleries as any)?.event_name || 'Shared Photos'
+  const galleryName = share?.client_galleries?.event_name || 'Shared Photos'
   return {
     title: `${galleryName} | Digital Official Studio`,
     description: 'Shared photo gallery from Digital Official Studio',
@@ -26,11 +39,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   const { id } = await params
   const supabase = await createServiceRoleClient()
 
-  const { data: share } = await supabase
-    .from('shared_links')
-    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
-    .eq('id', id)
-    .single()
+  const share = await findShare(supabase, id)
 
   if (!share) {
     return (
