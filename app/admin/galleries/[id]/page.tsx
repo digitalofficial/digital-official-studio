@@ -36,7 +36,6 @@ export default function GalleryDetail() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
   const [uploadCaption, setUploadCaption] = useState('')
-  const [uploadName, setUploadName] = useState('')
   const [uploadPortfolio, setUploadPortfolio] = useState(false)
   const [editingName, setEditingName] = useState<string | null>(null)
   const [editNameValue, setEditNameValue] = useState('')
@@ -91,6 +90,8 @@ export default function GalleryDetail() {
 
     const supabase = createClient()
 
+    const existingCount = gallery?.media.length || 0
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       setUploadProgress({ current: i + 1, total: files.length })
@@ -111,6 +112,9 @@ export default function GalleryDetail() {
 
       const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(filePath)
 
+      const num = existingCount + i + 1
+      const autoName = `${gallery?.event_name || 'Gallery'} - ${fileType === 'video' ? 'Video' : 'Image'} ${num}`
+
       // Save DB record via API
       await fetch(`/api/admin/galleries/${id}/media`, {
         method: 'POST',
@@ -119,14 +123,13 @@ export default function GalleryDetail() {
           fileUrl: publicUrl,
           fileType,
           caption: uploadCaption,
-          name: uploadName,
+          name: autoName,
           isPortfolio: uploadPortfolio,
         }),
       })
     }
 
     setUploadCaption('')
-    setUploadName('')
     setUploadPortfolio(false)
     setUploading(false)
     setUploadProgress(null)
@@ -301,15 +304,6 @@ export default function GalleryDetail() {
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-silver mb-1.5">File Name (optional)</label>
-              <input
-                value={uploadName}
-                onChange={(e) => setUploadName(e.target.value)}
-                className={inputClass}
-                placeholder="File name"
-              />
-            </div>
-            <div>
               <label className="block text-xs text-silver mb-1.5">Caption (optional)</label>
               <input
                 value={uploadCaption}
@@ -481,8 +475,8 @@ export default function GalleryDetail() {
                 </div>
               )}
               <div className="p-3">
-                {/* Inline name editing */}
-                {editingName === file.id ? (
+                {/* Inline name editing - creator only */}
+                {(role === 'admin' || (gallery.created_by && gallery.created_by === userId)) && editingName === file.id ? (
                   <div className="flex items-center gap-1 mb-2">
                     <input
                       value={editNameValue}
@@ -518,11 +512,11 @@ export default function GalleryDetail() {
                   </div>
                 ) : (
                   <p
-                    className="text-text text-xs mb-1 truncate cursor-pointer hover:text-icy transition-colors"
-                    onClick={(e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') }}
-                    title="Click to rename"
+                    className={`text-text text-xs mb-1 truncate ${(role === 'admin' || (gallery.created_by && gallery.created_by === userId)) ? 'cursor-pointer hover:text-icy transition-colors' : ''}`}
+                    onClick={(role === 'admin' || (gallery.created_by && gallery.created_by === userId)) ? (e) => { e.stopPropagation(); setEditingName(file.id); setEditNameValue(file.name || '') } : undefined}
+                    title={(role === 'admin' || (gallery.created_by && gallery.created_by === userId)) ? 'Click to rename' : undefined}
                   >
-                    {file.name || <span className="text-muted italic">Add name...</span>}
+                    {file.name || (role === 'admin' || (gallery.created_by && gallery.created_by === userId)) && <span className="text-muted italic">Add name...</span>}
                   </p>
                 )}
                 {file.caption && <p className="text-muted text-xs mb-2 truncate">{file.caption}</p>}
