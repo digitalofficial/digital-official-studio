@@ -9,14 +9,14 @@ async function findShare(supabase: any, id: string) {
   // Try slug first, then fall back to UUID
   const { data: bySlug } = await supabase
     .from('shared_links')
-    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
+    .select('*, client_galleries(event_name, client_name)')
     .eq('slug', id)
     .single()
   if (bySlug) return bySlug
 
   const { data: byId } = await supabase
     .from('shared_links')
-    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
+    .select('*, client_galleries(event_name, client_name)')
     .eq('id', id)
     .single()
   return byId || null
@@ -80,31 +80,6 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
 
   const gallery = share.client_galleries as any
 
-  // Fetch creator's watermark config
-  let watermarkConfig = undefined
-  if (gallery?.watermark_enabled && !gallery?.is_paid) {
-    const { data: parentGallery } = await supabase
-      .from('client_galleries')
-      .select('created_by')
-      .eq('id', share.gallery_id)
-      .single()
-    if (parentGallery?.created_by) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('watermark_text, watermark_image_url, watermark_style, watermark_opacity')
-        .eq('id', parentGallery.created_by)
-        .single()
-      if (profile) {
-        watermarkConfig = {
-          watermarkText: profile.watermark_text || 'DIGITAL OFFICIAL STUDIO',
-          watermarkImageUrl: profile.watermark_image_url || '',
-          watermarkStyle: profile.watermark_style || 'angled-repeat',
-          watermarkOpacity: profile.watermark_opacity ?? 20,
-        }
-      }
-    }
-  }
-
   return (
     <div className="min-h-screen bg-navy">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -130,9 +105,6 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         {photos && photos.length > 0 ? (
           <ShareMasonry
             items={photos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))}
-            watermarkEnabled={gallery?.watermark_enabled || false}
-            isPaid={gallery?.is_paid || false}
-            watermarkConfig={watermarkConfig}
           />
         ) : (
           <div className="text-center py-16">

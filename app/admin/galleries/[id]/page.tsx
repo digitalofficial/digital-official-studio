@@ -14,8 +14,7 @@ interface Gallery {
   slug: string
   is_public: boolean
   category: string
-  watermark_enabled: boolean
-  is_paid: boolean
+  created_by: string | null
   media: MediaFile[]
 }
 
@@ -26,6 +25,7 @@ interface MediaFile {
   caption: string | null
   name: string | null
   is_portfolio: boolean
+  watermark_enabled: boolean
   uploaded_by: string | null
 }
 
@@ -292,24 +292,7 @@ export default function GalleryDetail() {
             </a>
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={gallery.watermark_enabled || false}
-              onChange={async (e) => {
-                await fetch(`/api/admin/galleries/${id}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ watermarkEnabled: e.target.checked }),
-                })
-                fetchGallery()
-              }}
-              className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
-            />
-            <span className="text-sm text-silver">Watermark</span>
-          </label>
-        </div>
+        <div />
       </div>
 
       {/* Upload Section */}
@@ -543,7 +526,27 @@ export default function GalleryDetail() {
                   </p>
                 )}
                 {file.caption && <p className="text-muted text-xs mb-2 truncate">{file.caption}</p>}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  {(role === 'admin' || (gallery.created_by && gallery.created_by === userId)) && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await fetch(`/api/admin/media/${file.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ watermarkEnabled: !file.watermark_enabled }),
+                        })
+                        fetchGallery()
+                      }}
+                      className={`text-xs px-2 py-1 rounded ${
+                        file.watermark_enabled
+                          ? 'bg-amber-400/10 text-amber-400'
+                          : 'bg-card text-muted hover:text-silver'
+                      } transition-colors`}
+                    >
+                      {file.watermark_enabled ? 'Watermarked' : 'Watermark'}
+                    </button>
+                  )}
                   {role === 'admin' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); togglePortfolio(file.id, file.is_portfolio) }}

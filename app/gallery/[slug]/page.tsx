@@ -54,14 +54,15 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
 
   const { data: media } = await supabase
     .from('media_files')
-    .select('id, file_url, file_type, caption, name')
+    .select('id, file_url, file_type, caption, name, watermark_enabled')
     .eq('gallery_id', gallery.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  // Fetch creator's watermark config
+  // Fetch creator's watermark config if any media has watermark enabled
+  const hasAnyWatermark = (media || []).some((m: any) => m.watermark_enabled)
   let watermarkConfig = undefined
-  if (gallery.watermark_enabled && !gallery.is_paid && gallery.created_by) {
+  if (hasAnyWatermark && gallery.created_by) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('watermark_text, watermark_image_url, watermark_style, watermark_opacity')
@@ -77,5 +78,5 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
     }
   }
 
-  return <GalleryView gallery={gallery} media={media || []} watermarkEnabled={gallery.watermark_enabled} isPaid={gallery.is_paid} watermarkConfig={watermarkConfig} />
+  return <GalleryView gallery={gallery} media={media || []} watermarkConfig={watermarkConfig} />
 }

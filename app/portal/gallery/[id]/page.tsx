@@ -13,8 +13,7 @@ interface Gallery {
   event_name: string
   slug: string
   is_public: boolean
-  watermark_enabled: boolean
-  is_paid: boolean
+  created_by: string | null
   media: MediaFile[]
 }
 
@@ -25,6 +24,7 @@ interface MediaFile {
   caption: string | null
   name: string | null
   is_portfolio: boolean
+  watermark_enabled: boolean
   uploaded_by: string | null
 }
 
@@ -221,33 +221,15 @@ export default function PortalGalleryDetail() {
               <span className={gallery.is_public ? ' text-green-400' : ' text-muted'}> {gallery.is_public ? 'Public' : 'Private'}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={gallery.watermark_enabled || false}
-                onChange={async (e) => {
-                  await fetch(`/api/admin/galleries/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ watermarkEnabled: e.target.checked }),
-                  })
-                  fetchGallery()
-                }}
-                className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
-              />
-              <span className="text-xs text-silver">Watermark</span>
-            </label>
-            <button
-              onClick={copyLink}
-              className="text-xs px-4 py-2 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors flex items-center gap-2"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-              {copiedLink ? 'Copied!' : 'Copy Gallery Link'}
-            </button>
-          </div>
+          <button
+            onClick={copyLink}
+            className="text-xs px-4 py-2 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            {copiedLink ? 'Copied!' : 'Copy Gallery Link'}
+          </button>
         </div>
 
         {/* Upload Section */}
@@ -401,8 +383,27 @@ export default function PortalGalleryDetail() {
                       {file.name || <span className="text-muted italic">Add name...</span>}
                     </p>
                   )}
-                  <div className="flex items-center justify-between">
-                    {file.caption && <p className="text-muted text-xs truncate flex-1">{file.caption}</p>}
+                  {file.caption && <p className="text-muted text-xs mb-1 truncate">{file.caption}</p>}
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    {gallery.created_by && gallery.created_by === userId && (
+                      <button
+                        onClick={async () => {
+                          await fetch(`/api/admin/media/${file.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ watermarkEnabled: !file.watermark_enabled }),
+                          })
+                          fetchGallery()
+                        }}
+                        className={`text-xs px-2 py-1 rounded ${
+                          file.watermark_enabled
+                            ? 'bg-amber-400/10 text-amber-400'
+                            : 'bg-card text-muted hover:text-silver'
+                        } transition-colors`}
+                      >
+                        {file.watermark_enabled ? 'Watermarked' : 'Watermark'}
+                      </button>
+                    )}
                     {file.uploaded_by && file.uploaded_by === userId && (
                       <button
                         onClick={() => deleteMedia(file.id)}

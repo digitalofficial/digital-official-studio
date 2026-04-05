@@ -18,7 +18,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
 
   const { data: collection } = await supabase
     .from('collections')
-    .select('*, client_galleries(event_name, client_name, watermark_enabled, is_paid)')
+    .select('*, client_galleries(event_name, client_name)')
     .eq('id', id)
     .single()
 
@@ -47,15 +47,16 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
 
   const { data: photos } = await supabase
     .from('media_files')
-    .select('id, file_url, file_type, caption, name')
+    .select('id, file_url, file_type, caption, name, watermark_enabled')
     .in('id', collection.photo_ids)
     .is('deleted_at', null)
 
   const gallery = collection.client_galleries as any
 
-  // Fetch creator's watermark config
+  // Fetch creator's watermark config if any media has watermark enabled
+  const hasAnyWatermark = (photos || []).some((p: any) => p.watermark_enabled)
   let watermarkConfig = undefined
-  if (gallery?.watermark_enabled && !gallery?.is_paid) {
+  if (hasAnyWatermark) {
     const { data: parentGallery } = await supabase
       .from('client_galleries')
       .select('created_by')
@@ -99,8 +100,6 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
         {photos && photos.length > 0 ? (
           <CollectionView
             items={photos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))}
-            watermarkEnabled={gallery?.watermark_enabled || false}
-            isPaid={gallery?.is_paid || false}
             watermarkConfig={watermarkConfig}
           />
         ) : (

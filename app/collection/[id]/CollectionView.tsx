@@ -9,15 +9,14 @@ interface MediaItem {
   file_type: 'photo' | 'video'
   caption: string | null
   name?: string | null
+  watermark_enabled?: boolean
 }
 
 interface Props {
   items: MediaItem[]
-  watermarkEnabled?: boolean
-  isPaid?: boolean
   watermarkConfig?: WatermarkConfig
 }
 
-export default function CollectionView({ items, watermarkEnabled = false, isPaid = false, watermarkConfig }: Props) {
-  return <MasonryGrid items={items} showDownload watermarkEnabled={watermarkEnabled} isPaid={isPaid} watermarkConfig={watermarkConfig} />
+export default function CollectionView({ items, watermarkConfig }: Props) {
+  return <MasonryGrid items={items} showDownload watermarkConfig={watermarkConfig} />
 }

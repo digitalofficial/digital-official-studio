@@ -16,6 +16,7 @@ export async function PUT(
   if (typeof body.isPortfolio === 'boolean') updates.is_portfolio = body.isPortfolio
   if (typeof body.caption === 'string') updates.caption = body.caption
   if (typeof body.name === 'string') updates.name = body.name
+  if (typeof body.watermarkEnabled === 'boolean') updates.watermark_enabled = body.watermarkEnabled
   // Restore from trash
   if (body.restore === true) {
     updates.deleted_at = null

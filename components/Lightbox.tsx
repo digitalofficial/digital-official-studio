@@ -8,18 +8,17 @@ import WatermarkOverlay, { type WatermarkConfig } from '@/components/WatermarkOv
 interface LightboxItem {
   src: string
   name?: string
+  watermarkEnabled?: boolean
 }
 
 interface Props {
   items: LightboxItem[]
   initialIndex: number
   onClose: () => void
-  watermarkEnabled?: boolean
-  isPaid?: boolean
   watermarkConfig?: WatermarkConfig
 }
 
-export default function Lightbox({ items, initialIndex, onClose, watermarkEnabled = false, isPaid = false, watermarkConfig }: Props) {
+export default function Lightbox({ items, initialIndex, onClose, watermarkConfig }: Props) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [dragY, setDragY] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -31,7 +30,7 @@ export default function Lightbox({ items, initialIndex, onClose, watermarkEnable
 
   const current = items[currentIndex]
   const isVideo = /\.(mp4|mov|webm|ogg)(\?|$)/i.test(current.src)
-  const showWatermark = watermarkEnabled && !isPaid
+  const showWatermark = current.watermarkEnabled || false
 
   const goNext = useCallback(() => {
     setCurrentIndex((i) => (i < items.length - 1 ? i + 1 : i))

@@ -25,12 +25,10 @@ interface MediaItem {
 interface Props {
   gallery: Gallery
   media: MediaItem[]
-  watermarkEnabled?: boolean
-  isPaid?: boolean
   watermarkConfig?: WatermarkConfig
 }
 
-export default function GalleryView({ gallery, media, watermarkEnabled = false, isPaid = false, watermarkConfig }: Props) {
+export default function GalleryView({ gallery, media, watermarkConfig }: Props) {
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showShareModal, setShowShareModal] = useState(false)
@@ -275,7 +273,7 @@ export default function GalleryView({ gallery, media, watermarkEnabled = false, 
             )}
           </>
         ) : (
-          <MasonryGrid items={media} showDownload watermarkEnabled={watermarkEnabled} isPaid={isPaid} watermarkConfig={watermarkConfig} />
+          <MasonryGrid items={media} showDownload watermarkConfig={watermarkConfig} />
         )}
 
         <div className="text-center mt-16 pt-8 border-t border-white/5">
