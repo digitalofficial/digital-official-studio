@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import PasswordReveal from '@/components/PasswordReveal'
 import PrivateToggle from '@/components/PrivateToggle'
 
@@ -22,6 +23,7 @@ interface Gallery {
   password_plain: string | null
   created_at: string
   media_files: { count: number }[]
+  thumbnails: string[]
 }
 
 interface Props {
@@ -57,7 +59,6 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
     setError('')
 
     try {
-      // Create gallery via API
       const res = await fetch('/api/portal/galleries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -72,7 +73,7 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
       }
 
       const newGallery = await res.json()
-      setGalleries([newGallery, ...galleries])
+      setGalleries([{ ...newGallery, thumbnails: [] }, ...galleries])
       setForm({ clientName: profile.display_name || '', eventName: '', slug: '', password: '', isPublic: false, category: 'Other' })
       setShowForm(false)
     } catch {
@@ -98,7 +99,6 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isPublic: makePublic, ...(!makePublic && password ? { password } : {}) }),
     })
-    // Refresh galleries
     const res = await fetch('/api/admin/galleries')
     if (res.ok) setGalleries(await res.json())
   }
@@ -199,53 +199,116 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
           <p className="text-muted">No galleries yet. Create your first one!</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {galleries.map((g) => (
-            <div key={g.id} className="glass-card rounded-xl p-6 group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-lg bg-icy/10 flex items-center justify-center group-hover:bg-icy/20 transition-colors">
-                  <svg className="w-6 h-6 text-icy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${g.is_public ? 'bg-green-400/10 text-green-400' : 'bg-card text-muted'}`}>
-                    {g.is_public ? 'Public' : 'Private'}
-                  </span>
-                  <button onClick={() => handleDeleteGallery(g.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
-                </div>
-              </div>
-              <h3 className="text-text font-medium">{g.event_name}</h3>
-              <p className="text-muted text-sm mt-1">{g.media_files?.[0]?.count || 0} files</p>
-              <div className="flex items-center gap-2 mt-3">
-                <PrivateToggle
-                  isPrivate={!g.is_public}
-                  currentPassword={g.password_plain}
-                  onToggle={async (isPrivate, password) => {
-                    await togglePublic(g.id, !isPrivate, password)
-                  }}
-                  label={g.is_public ? 'Make Private' : 'Make Public'}
-                />
-              </div>
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
-                <Link
-                  href={`/portal/gallery/${g.id}`}
-                  className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors"
-                >
-                  Manage
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          {galleries.map((g) => {
+            const count = g.media_files?.[0]?.count || 0
+            const thumbs = g.thumbnails || []
+            const remaining = Math.max(0, count - thumbs.length)
+
+            return (
+              <div key={g.id} className="glass-card rounded-xl overflow-hidden group hover:ring-1 hover:ring-icy/20 transition-all">
+                {/* Thumbnail mosaic */}
+                <Link href={`/portal/gallery/${g.id}`} className="block">
+                  {thumbs.length > 0 ? (
+                    <div className="relative h-48 overflow-hidden bg-card">
+                      {thumbs.length === 1 && (
+                        <Image src={thumbs[0]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="33vw" />
+                      )}
+                      {thumbs.length === 2 && (
+                        <div className="grid grid-cols-2 h-full gap-0.5">
+                          {thumbs.map((t, i) => (
+                            <div key={i} className="relative overflow-hidden">
+                              <Image src={t} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="17vw" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {thumbs.length === 3 && (
+                        <div className="grid grid-cols-2 h-full gap-0.5">
+                          <div className="relative row-span-2 overflow-hidden">
+                            <Image src={thumbs[0]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="17vw" />
+                          </div>
+                          <div className="relative overflow-hidden">
+                            <Image src={thumbs[1]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="17vw" />
+                          </div>
+                          <div className="relative overflow-hidden">
+                            <Image src={thumbs[2]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="17vw" />
+                          </div>
+                        </div>
+                      )}
+                      {thumbs.length >= 4 && (
+                        <div className="grid grid-cols-3 grid-rows-2 h-full gap-0.5">
+                          <div className="relative col-span-2 row-span-2 overflow-hidden">
+                            <Image src={thumbs[0]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="22vw" />
+                          </div>
+                          <div className="relative overflow-hidden">
+                            <Image src={thumbs[1]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="11vw" />
+                          </div>
+                          <div className="relative overflow-hidden">
+                            <Image src={thumbs[2]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="11vw" />
+                            {remaining > 0 && (
+                              <div className="absolute inset-0 bg-navy/70 backdrop-blur-[2px] flex items-center justify-center">
+                                <span className="text-text font-semibold text-lg">+{remaining}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-card flex items-center justify-center">
+                      <svg className="w-12 h-12 text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
                 </Link>
-                <button
-                  onClick={() => copyLink(g.slug)}
-                  className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors"
-                >
-                  {copiedSlug === g.slug ? 'Copied!' : 'Copy Link'}
-                </button>
+
+                {/* Card content */}
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="text-text font-medium">{g.event_name}</h3>
+                      <p className="text-muted text-sm">{count} files</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${g.is_public ? 'bg-green-400/10 text-green-400' : 'bg-card text-muted'}`}>
+                        {g.is_public ? 'Public' : 'Private'}
+                      </span>
+                      <button onClick={() => handleDeleteGallery(g.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <PrivateToggle
+                      isPrivate={!g.is_public}
+                      currentPassword={g.password_plain}
+                      onToggle={async (isPrivate, password) => {
+                        await togglePublic(g.id, !isPrivate, password)
+                      }}
+                      label={g.is_public ? 'Make Private' : 'Make Public'}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
+                    <Link
+                      href={`/portal/gallery/${g.id}`}
+                      className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors"
+                    >
+                      Manage
+                    </Link>
+                    <button
+                      onClick={() => copyLink(g.slug)}
+                      className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors"
+                    >
+                      {copiedSlug === g.slug ? 'Copied!' : 'Copy Link'}
+                    </button>
+                  </div>
+                  {!g.is_public && g.password_plain && (
+                    <PasswordReveal password={g.password_plain} />
+                  )}
+                </div>
               </div>
-              {!g.is_public && g.password_plain && (
-                <PasswordReveal password={g.password_plain} />
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </>

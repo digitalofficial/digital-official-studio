@@ -31,23 +31,41 @@ export default async function ClientPortal() {
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
-    // Get accurate media counts (excluding deleted)
+    // Get accurate media counts and thumbnails (excluding deleted)
     if (data && data.length > 0) {
       const galIds = data.map((g: any) => g.id)
-      const { data: counts } = await admin
+
+      const { data: allMedia } = await admin
         .from('media_files')
         .select('gallery_id')
         .in('gallery_id', galIds)
         .is('deleted_at', null)
 
+      const { data: photoMedia } = await admin
+        .from('media_files')
+        .select('gallery_id, file_url')
+        .in('gallery_id', galIds)
+        .eq('file_type', 'photo')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+
       const countMap: Record<string, number> = {}
-      counts?.forEach((m: any) => {
+      allMedia?.forEach((m: any) => {
         countMap[m.gallery_id] = (countMap[m.gallery_id] || 0) + 1
+      })
+
+      const thumbMap: Record<string, string[]> = {}
+      photoMedia?.forEach((m: any) => {
+        if (!thumbMap[m.gallery_id]) thumbMap[m.gallery_id] = []
+        if (thumbMap[m.gallery_id].length < 5) {
+          thumbMap[m.gallery_id].push(m.file_url)
+        }
       })
 
       galleries = data.map((g: any) => ({
         ...g,
         media_files: [{ count: countMap[g.id] || 0 }],
+        thumbnails: thumbMap[g.id] || [],
       }))
     }
   }
