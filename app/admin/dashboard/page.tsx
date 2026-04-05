@@ -1,5 +1,6 @@
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import QuickUpload from './QuickUpload'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,7 +71,10 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="font-[family-name:var(--font-fraunces)] text-3xl text-text mb-2">Dashboard</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-[family-name:var(--font-fraunces)] text-3xl text-text">Dashboard</h1>
+        <QuickUpload />
+      </div>
       {profile?.display_name && <p className="text-muted mb-8">Welcome back, {profile.display_name}.</p>}
       {!profile?.display_name && <div className="mb-8" />}
 
