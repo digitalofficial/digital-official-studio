@@ -184,18 +184,29 @@ export default function WatermarkSettings() {
       {/* Preview */}
       <div>
         <label className="block text-xs text-silver mb-1.5">Preview</label>
-        <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gradient-to-br from-card to-navy border border-white/10">
-          {/* Sample background */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-muted text-sm">Sample Image</p>
+        <div className="relative w-full h-48 rounded-lg overflow-hidden border border-white/10">
+          {/* Sample photo background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-900/60 via-emerald-900/40 to-amber-900/50" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <div className="flex gap-3">
+              <div className="w-16 h-20 rounded bg-white/10" />
+              <div className="w-16 h-24 rounded bg-white/10" />
+              <div className="w-16 h-18 rounded bg-white/10" />
+            </div>
+            <div className="flex gap-3">
+              <div className="w-20 h-14 rounded bg-white/10" />
+              <div className="w-20 h-14 rounded bg-white/10" />
+            </div>
           </div>
-          {/* Watermark preview */}
-          <WatermarkOverlayPreview
-            text={watermarkText}
-            imageUrl={watermarkImageUrl}
-            style={watermarkStyle}
-            opacity={previewOpacity}
-          />
+          {/* Watermark overlay on top */}
+          <div className="absolute inset-0 z-10">
+            <WatermarkOverlayPreview
+              text={watermarkText}
+              imageUrl={watermarkImageUrl}
+              style={watermarkStyle}
+              opacity={previewOpacity}
+            />
+          </div>
         </div>
       </div>
 
