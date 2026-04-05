@@ -8,8 +8,15 @@ import CollectionShareButtons from './CollectionShareButtons'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServiceRoleClient()
-  const { data } = await supabase.from('collections').select('name').eq('id', id).single()
-  return { title: `${data?.name || 'Collection'} | Digital Official Studio` }
+  const { data } = await supabase.from('collections').select('name, gallery_id').eq('id', id).single()
+  const title = `${data?.name || 'Collection'} | Digital Official Studio`
+  return {
+    title,
+    openGraph: {
+      title,
+      images: data?.gallery_id ? [`/api/og?galleryId=${data.gallery_id}`] : [],
+    },
+  }
 }
 
 export default async function CollectionPage({ params }: { params: Promise<{ id: string }> }) {

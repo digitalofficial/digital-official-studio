@@ -29,9 +29,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const share = await findShare(supabase, id)
 
   const galleryName = share?.client_galleries?.event_name || 'Shared Photos'
+  const title = `${galleryName} | Digital Official Studio`
   return {
-    title: `${galleryName} | Digital Official Studio`,
+    title,
     description: 'Shared photo gallery from Digital Official Studio',
+    openGraph: {
+      title,
+      description: 'Shared photo gallery from Digital Official Studio',
+      images: share?.gallery_id ? [`/api/og?galleryId=${share.gallery_id}`] : [],
+    },
   }
 }
 

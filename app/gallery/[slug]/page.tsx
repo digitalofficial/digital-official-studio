@@ -9,12 +9,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const supabase = await createServiceRoleClient()
   const { data: gallery } = await supabase
     .from('client_galleries')
-    .select('client_name, event_name')
+    .select('id, client_name, event_name')
     .eq('slug', slug)
     .single()
 
+  const title = gallery ? `${gallery.event_name} | Digital Official Studio` : 'Gallery | Digital Official Studio'
+
   return {
-    title: gallery ? `${gallery.event_name} | Digital Official Studio` : 'Gallery | Digital Official Studio',
+    title,
+    openGraph: {
+      title,
+      images: gallery ? [`/api/og?galleryId=${gallery.id}`] : [],
+    },
   }
 }
 
