@@ -8,7 +8,7 @@ const services = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
       </svg>
     ),
-    features: ['Up to 4 hours of coverage', '200+ edited photos', 'Private online gallery', 'Download access for clients'],
+    features: ['Up to 2 hours of coverage', '200+ edited photos and videos', 'Private online gallery', 'Download access for clients'],
   },
   {
     title: 'Cinematic Film',
