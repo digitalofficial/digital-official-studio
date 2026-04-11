@@ -15,6 +15,21 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Digital Official Studio | Photography & Videography",
   description: "Every moment, beautifully captured. Professional photography and videography for Sweet 16s, Quinceañeras, parties, and special events.",
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
+  openGraph: {
+    title: 'Digital Official Studio',
+    description: 'Every moment, beautifully captured. Professional photography and videography for Sweet 16s, Quinceañeras, parties, and special events.',
+    siteName: 'Digital Official Studio',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Digital Official Studio',
+    description: 'Every moment, beautifully captured. Professional photography and videography for Sweet 16s, Quinceañeras, parties, and special events.',
+  },
 };
 
 export const viewport = {
