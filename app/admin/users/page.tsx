@@ -125,6 +125,17 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleResetPassword(user: Profile) {
+    if (!confirm(`Send a password reset email to ${user.email}?`)) return
+    const res = await fetch(`/api/admin/users/${user.id}/reset-password`, { method: 'POST' })
+    if (res.ok) {
+      alert(`Password reset email sent to ${user.email}`)
+    } else {
+      const data = await res.json()
+      alert(data.error || 'Failed to send reset email')
+    }
+  }
+
   function toggleGallery(galleryId: string) {
     setForm((prev) => {
       const has = prev.assignedGalleries.includes(galleryId)
@@ -316,6 +327,12 @@ export default function AdminUsers() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleResetPassword(u) }}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-amber-400/10 text-amber-400 hover:bg-amber-400/20 transition-colors"
+                    >
+                      Reset PW
+                    </button>
                     <button
                       onClick={() => startEdit(u)}
                       className="text-xs px-3 py-1.5 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors"
