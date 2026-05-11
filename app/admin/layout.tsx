@@ -18,16 +18,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .single()
 
   if (!profile) {
-    // First-time user without profile — assume admin (for existing users before profiles table)
+    // First-time user without profile — default to client (admin must promote manually)
     await supabase.from('profiles').insert({
       id: user.id,
       email: user.email!,
-      role: 'admin',
+      role: 'client',
     })
-    profile = { role: 'admin' }
+    redirect('/portal')
   }
 
-  // Clients can't access admin panel
+  // Only admins and photographers can access admin panel
   if (profile.role === 'client') {
     redirect('/portal')
   }

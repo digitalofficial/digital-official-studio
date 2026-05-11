@@ -10,14 +10,23 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const admin = await createServiceRoleClient()
+
+  // Check role and assignment
+  const { data: profile } = await admin.from('profiles').select('role, assigned_galleries').eq('id', user.id).single()
+  if (profile?.role !== 'admin') {
+    const assigned = profile?.assigned_galleries || []
+    if (!assigned.includes(id)) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    }
+  }
+
   const body = await request.json()
   const { fileUrl, fileType, caption, isPortfolio, name } = body
 
   if (!fileUrl || !fileType) {
     return NextResponse.json({ error: 'Missing file info' }, { status: 400 })
   }
-
-  const admin = await createServiceRoleClient()
   const { data, error } = await admin.from('media_files').insert({
     gallery_id: id,
     file_url: fileUrl,

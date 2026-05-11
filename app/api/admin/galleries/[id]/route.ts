@@ -12,6 +12,16 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = await createServiceRoleClient()
+
+  // Check role and assignment
+  const { data: profile } = await admin.from('profiles').select('role, assigned_galleries').eq('id', user.id).single()
+  if (profile?.role !== 'admin') {
+    const assigned = profile?.assigned_galleries || []
+    if (!assigned.includes(id)) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    }
+  }
+
   const { data: gallery } = await admin
     .from('client_galleries')
     .select('*')
@@ -39,6 +49,17 @@ export async function PUT(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const admin = await createServiceRoleClient()
+
+  // Check role and assignment
+  const { data: reqProfile } = await admin.from('profiles').select('role, assigned_galleries').eq('id', user.id).single()
+  if (reqProfile?.role !== 'admin') {
+    const assigned = reqProfile?.assigned_galleries || []
+    if (!assigned.includes(id)) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    }
+  }
+
   const body = await request.json()
   const updates: Record<string, unknown> = {}
 
@@ -61,8 +82,6 @@ export async function PUT(
     updates.deleted_at = null
     updates.deleted_by = null
   }
-
-  const admin = await createServiceRoleClient()
 
   // If restoring, also restore media files and re-assign to creator
   if (body.restore === true) {

@@ -8,6 +8,12 @@ export async function GET() {
 
   const admin = await createServiceRoleClient()
 
+  // Only admins can list users
+  const { data: requesterProfile } = await admin.from('profiles').select('role').eq('id', user.id).single()
+  if (requesterProfile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Admin only' }, { status: 403 })
+  }
+
   // Get profiles and auth users
   const { data: profiles } = await admin.from('profiles').select('*').order('created_at', { ascending: false })
   const { data: authData } = await admin.auth.admin.listUsers()

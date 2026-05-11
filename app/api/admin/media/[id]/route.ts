@@ -10,6 +10,18 @@ export async function PUT(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const admin = await createServiceRoleClient()
+
+  // Check role and gallery assignment
+  const { data: profile } = await admin.from('profiles').select('role, assigned_galleries').eq('id', user.id).single()
+  if (profile?.role !== 'admin') {
+    const { data: mediaRecord } = await admin.from('media_files').select('gallery_id').eq('id', id).single()
+    const assigned = profile?.assigned_galleries || []
+    if (!mediaRecord || !assigned.includes(mediaRecord.gallery_id)) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    }
+  }
+
   const body = await request.json()
   const updates: Record<string, unknown> = {}
 
@@ -22,8 +34,6 @@ export async function PUT(
     updates.deleted_at = null
     updates.deleted_by = null
   }
-
-  const admin = await createServiceRoleClient()
 
   // When restoring media, also restore its parent gallery if it was deleted
   if (body.restore === true) {
@@ -96,11 +106,19 @@ export async function DELETE(
 
   if (!media) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  const isAdmin = profile?.role === 'admin'
+  const { data: delProfile } = await admin.from('profiles').select('role, assigned_galleries').eq('id', user.id).single()
+  const isAdmin = delProfile?.role === 'admin'
 
-  if (!isAdmin && (!media.uploaded_by || media.uploaded_by !== user.id)) {
-    return NextResponse.json({ error: 'You can only delete files you uploaded' }, { status: 403 })
+  // Non-admins must be assigned to the gallery and can only delete their own uploads
+  if (!isAdmin) {
+    const { data: mediaFull } = await admin.from('media_files').select('gallery_id').eq('id', id).single()
+    const assigned = delProfile?.assigned_galleries || []
+    if (!mediaFull || !assigned.includes(mediaFull.gallery_id)) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    }
+    if (!media.uploaded_by || media.uploaded_by !== user.id) {
+      return NextResponse.json({ error: 'You can only delete files you uploaded' }, { status: 403 })
+    }
   }
 
   // Check if requesting permanent delete (admin only, from trash)
