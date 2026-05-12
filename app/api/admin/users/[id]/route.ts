@@ -22,6 +22,15 @@ export async function PUT(
   if (typeof body.displayName === 'string') updates.display_name = body.displayName
   if (Array.isArray(body.assignedGalleries)) updates.assigned_galleries = body.assignedGalleries
 
+  // Update password in Supabase Auth and store plain text
+  if (body.password && body.password.trim()) {
+    const { error: authError } = await admin.auth.admin.updateUserById(id, {
+      password: body.password,
+    })
+    if (authError) return NextResponse.json({ error: authError.message }, { status: 500 })
+    updates.password_plain = body.password
+  }
+
   const { data, error } = await admin.from('profiles').update(updates).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

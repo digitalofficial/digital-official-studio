@@ -116,8 +116,12 @@ create table if not exists public.profiles (
   display_name text,
   role text not null default 'client' check (role in ('admin', 'photographer', 'client')),
   assigned_galleries uuid[] default '{}',
+  password_plain text,
   created_at timestamptz default now()
 );
+
+-- Migration: Add password_plain to existing profiles table
+-- alter table public.profiles add column if not exists password_plain text;
 
 alter table public.profiles enable row level security;
 
