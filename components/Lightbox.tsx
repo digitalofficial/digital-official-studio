@@ -9,6 +9,7 @@ interface LightboxItem {
   src: string
   name?: string
   watermarkEnabled?: boolean
+  isVideo?: boolean
 }
 
 interface Props {
@@ -29,7 +30,7 @@ export default function Lightbox({ items, initialIndex, onClose, watermarkConfig
   const containerRef = useRef<HTMLDivElement>(null)
 
   const current = items[currentIndex]
-  const isVideo = /\.(mp4|mov|webm|ogg)(\?|$)/i.test(current.src)
+  const isVideo = current.isVideo || /\.(mp4|mov|webm|ogg)(\?|$)/i.test(current.src)
   const showWatermark = current.watermarkEnabled || false
 
   const goNext = useCallback(() => {

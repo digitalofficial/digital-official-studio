@@ -30,6 +30,7 @@ export default function MasonryGrid({ items, showDownload = false, watermarkConf
     src: item.file_url,
     name: item.name || undefined,
     watermarkEnabled: item.watermark_enabled || false,
+    isVideo: item.file_type === 'video',
   }))
 
   return (
