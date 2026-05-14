@@ -447,11 +447,10 @@ export default function GalleryDetail() {
                 )}
               </div>
 
-              {/* Photo - click opens lightbox */}
+              {/* Media - click opens lightbox */}
               {file.file_type === 'photo' ? (
                 <div className="relative aspect-square cursor-pointer" onClick={() => {
-                  const photoFiles = gallery.media.filter(f => f.file_type === 'photo')
-                  const idx = photoFiles.findIndex(f => f.id === file.id)
+                  const idx = gallery.media.findIndex(f => f.id === file.id)
                   setLightboxIndex(idx >= 0 ? idx : 0)
                 }}>
                   <Image
@@ -463,9 +462,12 @@ export default function GalleryDetail() {
                   />
                 </div>
               ) : (
-                <div className="relative aspect-video bg-card">
-                  <video src={file.file_url} className="w-full h-full object-cover" preload="metadata" />
-                  <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative aspect-video bg-card cursor-pointer" onClick={() => {
+                  const idx = gallery.media.findIndex(f => f.id === file.id)
+                  setLightboxIndex(idx >= 0 ? idx : 0)
+                }}>
+                  <video src={file.file_url} className="w-full h-full object-cover pointer-events-none" preload="metadata" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-10 h-10 rounded-full bg-navy/80 flex items-center justify-center">
                       <svg className="w-5 h-5 text-icy" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z" />
@@ -688,7 +690,7 @@ export default function GalleryDetail() {
 
       {lightboxIndex !== null && (
         <Lightbox
-          items={gallery.media.filter(f => f.file_type === 'photo').map(f => ({ src: f.file_url, name: f.name || undefined }))}
+          items={gallery.media.map(f => ({ src: f.file_url, name: f.name || undefined, isVideo: f.file_type === 'video' }))}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
         />
