@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Digital Official Studio
 
-## Getting Started
+Photography / creative-studio platform for Digital Official — a public portfolio plus a
+client-gallery and booking system. Clients view and download their photo collections
+through a token-shared link or an authenticated portal; an admin back office manages
+galleries, collections, bookings, and users.
 
-First, run the development server:
+## Surface
+
+- **Public:** `/` (home), `/portfolio`
+- **Client-shared (dynamic, not indexed):** `/gallery/[slug]`, `/collection/[id]`, `/share/[id]`
+- **Client portal (auth):** `/portal/*` — bookings, collections, settings
+- **Admin (auth):** `/admin/*` — dashboard, galleries, collections, bookings, users, settings, trash
+- **Auth:** `/login`, `/reset-password`
+
+## Stack
+
+| Layer | Tech |
+|---|---|
+| Framework | Next.js 16.2 (App Router) |
+| UI | React 19, Tailwind CSS 4, `react-masonry-css` |
+| Data / auth / storage | Supabase (`@supabase/ssr`, `@supabase/supabase-js`) |
+| Language | TypeScript 5 |
+
+## Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev     # start dev server (localhost:3000)
+npm run build   # production build
+npm run start   # serve the production build
+npm run lint    # eslint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Configure a local `.env.local` (gitignored). At minimum the Supabase client keys are required:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-## Learn More
+Confirm the full env set against the Supabase project before deploying.
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel (Next.js). Canonical production domain: **TBD — not yet recorded** (add it to the
+vault `Domains.md` and set `metadataBase` / `NEXT_PUBLIC_SITE_URL` before adding a sitemap).
