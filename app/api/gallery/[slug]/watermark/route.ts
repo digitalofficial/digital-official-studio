@@ -3,16 +3,16 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { id } = await params
+  const { slug } = await params
   const admin = await createServiceRoleClient()
 
   // Get the gallery creator
   const { data: gallery } = await admin
     .from('client_galleries')
     .select('created_by')
-    .eq('id', id)
+    .eq('slug', slug)
     .single()
 
   if (!gallery?.created_by) {
