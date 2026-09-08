@@ -41,6 +41,7 @@ export default function GalleryDetail() {
   const [editingName, setEditingName] = useState<string | null>(null)
   const [editNameValue, setEditNameValue] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [downloadStatus, setDownloadStatus] = useState<string | null>(null)
   const [bulkLoading, setBulkLoading] = useState(false)
   const [role, setRole] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -107,6 +108,79 @@ export default function GalleryDetail() {
     setUploading(false)
     setUploadProgress(null)
     fetchGallery()
+  }
+
+  async function fetchDownloadFiles(mediaIds?: string[]) {
+    const res = await fetch(`/api/admin/galleries/${id}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mediaIds ? { mediaIds } : {}),
+    })
+    if (!res.ok) throw new Error('Failed to prepare download')
+    const { files } = await res.json()
+    return files as { id: string; name: string; url: string; file_type: string }[]
+  }
+
+  function saveBlob(name: string, blob: Blob) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+  }
+
+  async function downloadOne(mediaId: string) {
+    try {
+      setDownloadStatus('Preparing…')
+      const files = await fetchDownloadFiles([mediaId])
+      if (!files.length) return
+      const blob = await (await fetch(files[0].url)).blob()
+      saveBlob(files[0].name, blob)
+    } catch (e) {
+      console.error(e)
+      alert('Download failed.')
+    } finally {
+      setDownloadStatus(null)
+    }
+  }
+
+  async function downloadZip(mediaIds: string[] | undefined, zipName: string) {
+    try {
+      setDownloadStatus('Preparing…')
+      const files = await fetchDownloadFiles(mediaIds)
+      if (!files.length) { setDownloadStatus(null); return }
+      if (files.length > 300 &&
+        !confirm(`This will zip ${files.length} files and may use significant memory. Continue?`)) {
+        setDownloadStatus(null)
+        return
+      }
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+      const used = new Set<string>()
+      for (let i = 0; i < files.length; i++) {
+        setDownloadStatus(`Downloading ${i + 1} of ${files.length}…`)
+        const blob = await (await fetch(files[i].url)).blob()
+        // Guard against duplicate names inside the zip.
+        let name = files[i].name
+        if (used.has(name)) {
+          const dot = name.lastIndexOf('.')
+          name = dot > 0 ? `${name.slice(0, dot)}-${i + 1}${name.slice(dot)}` : `${name}-${i + 1}`
+        }
+        used.add(name)
+        zip.file(name, blob)
+      }
+      setDownloadStatus('Building zip…')
+      const blob = await zip.generateAsync({ type: 'blob' })
+      saveBlob(zipName, blob)
+    } catch (e) {
+      console.error(e)
+      alert('Download failed.')
+    } finally {
+      setDownloadStatus(null)
+    }
   }
 
   function toggleSelect(mediaId: string) {
@@ -322,14 +396,26 @@ export default function GalleryDetail() {
       {/* Media Grid */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="text-text font-medium">Media ({gallery.media.length} files)</h2>
-        {gallery.media.length > 0 && (
-          <button
-            onClick={toggleSelectAll}
-            className="text-xs text-silver hover:text-icy transition-colors"
-          >
-            {selected.size === gallery.media.length ? 'Deselect All' : 'Select All'}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {downloadStatus && <span className="text-xs text-icy">{downloadStatus}</span>}
+          {gallery.media.length > 0 && (
+            <button
+              onClick={() => downloadZip(undefined, `${(gallery.event_name || 'gallery').replace(/[^\w.\- ]+/g, '_')}.zip`)}
+              disabled={!!downloadStatus}
+              className="text-xs px-3 py-1.5 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors disabled:opacity-50"
+            >
+              Download all
+            </button>
+          )}
+          {gallery.media.length > 0 && (
+            <button
+              onClick={toggleSelectAll}
+              className="text-xs text-silver hover:text-icy transition-colors"
+            >
+              {selected.size === gallery.media.length ? 'Deselect All' : 'Select All'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Bulk Action Bar */}
@@ -337,6 +423,13 @@ export default function GalleryDetail() {
         <div className="glass-card rounded-lg p-3 mb-4 flex items-center justify-between flex-wrap gap-3">
           <p className="text-sm text-silver">{selected.size} selected</p>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => downloadZip(Array.from(selected), `${(gallery.event_name || 'gallery').replace(/[^\w.\- ]+/g, '_')}-selected.zip`)}
+              disabled={bulkLoading || !!downloadStatus}
+              className="text-xs px-3 py-1.5 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors disabled:opacity-50"
+            >
+              Download Selected
+            </button>
             <button
               onClick={() => setShowShareModal(true)}
               disabled={bulkLoading}
@@ -528,6 +621,13 @@ export default function GalleryDetail() {
                       {file.is_portfolio ? 'In Portfolio' : 'Add to Portfolio'}
                     </button>
                   )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); downloadOne(file.id) }}
+                    disabled={!!downloadStatus}
+                    className="text-xs px-2 py-1 rounded bg-card text-muted hover:text-icy transition-colors disabled:opacity-50"
+                  >
+                    Download
+                  </button>
                   {(role === 'admin' || (file.uploaded_by && file.uploaded_by === userId)) && (
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteMedia(file.id) }}
