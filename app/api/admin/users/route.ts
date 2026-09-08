@@ -67,7 +67,6 @@ export async function POST(request: Request) {
     display_name: displayName || null,
     role: role || 'client',
     assigned_galleries: assignedGalleries || [],
-    password_plain: password,
   })
 
   if (profileError) {

@@ -51,7 +51,6 @@ export async function POST(request: Request) {
     created_by: user.id,
     is_private: isPrivate || false,
     password_hash: passwordHash,
-    password_plain: isPrivate ? password : null,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

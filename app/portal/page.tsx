@@ -26,7 +26,7 @@ export default async function ClientPortal() {
   if (assigned.length > 0) {
     const { data } = await admin
       .from('client_galleries')
-      .select('id, client_name, event_name, slug, is_public, password_plain, created_at')
+      .select('id, client_name, event_name, slug, is_public, created_at')
       .in('id', assigned)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })

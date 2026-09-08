@@ -47,8 +47,16 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
     )
   }
 
-  // Public galleries skip password check
-  if (!gallery.is_public && gallery.password_hash) {
+  // Public galleries skip the password check. A private gallery ALWAYS gates —
+  // if it is private but has no password set, deny rather than serve it open.
+  if (!gallery.is_public) {
+    if (!gallery.password_hash) {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-center px-6">
+          <p className="text-muted">This gallery is private and not currently available. Please contact the studio.</p>
+        </div>
+      )
+    }
     const cookieStore = await cookies()
     const sessionCookie = cookieStore.get(`gallery_${gallery.id}`)
     const isAuthenticated = sessionCookie?.value === gallery.id

@@ -41,8 +41,16 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
     )
   }
 
-  // Check if private and needs password
-  if (collection.is_private && collection.password_hash) {
+  // A private collection ALWAYS gates. If it is private but has no password set,
+  // deny rather than serving it open.
+  if (collection.is_private) {
+    if (!collection.password_hash) {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-center px-6">
+          <p className="text-muted">This collection is private and not currently available. Please contact the studio.</p>
+        </div>
+      )
+    }
     const cookieStore = await cookies()
     const sessionCookie = cookieStore.get(`collection_${collection.id}`)
     const isAuthenticated = sessionCookie?.value === collection.id

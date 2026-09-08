@@ -72,11 +72,10 @@ export async function PUT(
   if (typeof body.isPaid === 'boolean') updates.is_paid = body.isPaid
   if (body.password) {
     updates.password_hash = await bcrypt.hash(body.password, 10)
-    updates.password_plain = body.password
   }
   if (body.isPublic === true) {
-    // When making public, clear password
-    updates.password_plain = null
+    // When making public, clear the password gate
+    updates.password_hash = null
   }
   if (body.restore === true) {
     updates.deleted_at = null

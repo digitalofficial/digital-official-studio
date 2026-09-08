@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import PasswordReveal from '@/components/PasswordReveal'
 import PrivateToggle from '@/components/PrivateToggle'
 
 interface Collection {
@@ -11,7 +10,6 @@ interface Collection {
   gallery_id: string
   photo_ids: string[]
   is_private: boolean
-  password_plain: string | null
   created_at: string
   client_galleries: { event_name: string; client_name: string } | null
 }
@@ -100,7 +98,6 @@ export default function PortalCollections() {
                   </div>
                   <PrivateToggle
                     isPrivate={c.is_private}
-                    currentPassword={c.password_plain}
                     onToggle={async (isPrivate, password) => {
                       await togglePrivate(c.id, isPrivate, password)
                     }}
@@ -117,9 +114,6 @@ export default function PortalCollections() {
                   {c.photo_ids.length} photos
                   {c.client_galleries && ` · ${c.client_galleries.event_name}`}
                 </p>
-                {c.is_private && c.password_plain && (
-                  <PasswordReveal password={c.password_plain} />
-                )}
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
                   <Link
                     href={`/collection/${c.id}`}

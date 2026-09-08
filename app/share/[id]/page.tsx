@@ -59,8 +59,16 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
     )
   }
 
-  // Check if private and needs password
-  if (share.is_private && share.password_hash) {
+  // A private share ALWAYS gates. If it is private but has no password set,
+  // deny rather than serving it open.
+  if (share.is_private) {
+    if (!share.password_hash) {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-center px-6">
+          <p className="text-muted">This shared gallery is private and not currently available.</p>
+        </div>
+      )
+    }
     const cookieStore = await cookies()
     const sessionCookie = cookieStore.get(`share_${share.id}`)
     const isAuthenticated = sessionCookie?.value === share.id

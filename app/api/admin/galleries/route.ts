@@ -94,7 +94,6 @@ export async function POST(request: Request) {
     event_name: eventName,
     slug,
     password_hash: passwordHash,
-    password_plain: password || null,
     is_public: isPublic || false,
     category: category || 'Other',
     created_by: user.id,

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import PasswordReveal from '@/components/PasswordReveal'
 import PrivateToggle from '@/components/PrivateToggle'
 
 interface Gallery {
@@ -15,7 +14,6 @@ interface Gallery {
   category: string
   created_at: string
   created_by: string | null
-  password_plain: string | null
   media_files: { count: number }[]
   thumbnails: string[]
 }
@@ -294,16 +292,12 @@ export default function AdminGalleries() {
                     >
                       {copiedSlug === g.slug ? 'Copied!' : 'Copy Link'}
                     </button>
-                    {!g.is_public && g.password_plain && (
-                      <PasswordReveal password={g.password_plain} />
-                    )}
                   </div>
 
                   <div className="flex items-center gap-2 pt-3 border-t border-white/5" onClick={(e) => e.preventDefault()}>
                     {(role === 'admin' || g.created_by === userId) && (
                       <PrivateToggle
                         isPrivate={!g.is_public}
-                        currentPassword={g.password_plain}
                         onToggle={async (isPrivate, password) => {
                           await togglePublic(g.id, !isPrivate, password)
                         }}

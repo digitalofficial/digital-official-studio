@@ -27,10 +27,9 @@ export async function POST(request: Request) {
     event_name: eventName,
     slug,
     password_hash: passwordHash,
-    password_plain: password || null,
     is_public: isPublic || false,
     category: category || 'Other',
-  }).select('id, client_name, event_name, slug, is_public, password_plain, created_at').single()
+  }).select('id, client_name, event_name, slug, is_public, created_at').single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

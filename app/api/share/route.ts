@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServiceRoleClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import bcrypt from 'bcryptjs'
 
 function generateSlug(galleryName: string, sharedBy: string | null): string {
@@ -20,19 +20,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Gallery ID and photos required' }, { status: 400 })
     }
 
+    // Require a signed-in user who owns / is assigned the gallery (or an admin).
+    // Without this, anyone could mint a public share link to any private gallery.
+    const authClient = await createServerSupabaseClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const supabase = await createServiceRoleClient()
+
+    // Fetch gallery name for the slug + owner for the access check
+    const { data: gallery } = await supabase
+      .from('client_galleries')
+      .select('event_name, created_by')
+      .eq('id', galleryId)
+      .single()
+
+    if (!gallery) return NextResponse.json({ error: 'Gallery not found' }, { status: 404 })
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, assigned_galleries')
+      .eq('id', user.id)
+      .single()
+
+    const isAdmin = profile?.role === 'admin'
+    const isOwner = gallery.created_by === user.id
+    const isAssigned = (profile?.assigned_galleries || []).includes(galleryId)
+    if (!isAdmin && !isOwner && !isAssigned) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     let passwordHash = null
     if (isPrivate && password) {
       passwordHash = await bcrypt.hash(password, 10)
     }
-
-    const supabase = await createServiceRoleClient()
-
-    // Fetch gallery name for the slug
-    const { data: gallery } = await supabase
-      .from('client_galleries')
-      .select('event_name')
-      .eq('id', galleryId)
-      .single()
 
     const slug = generateSlug(gallery?.event_name || 'shared', sharedBy || null)
 

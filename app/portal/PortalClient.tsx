@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import PasswordReveal from '@/components/PasswordReveal'
 import PrivateToggle from '@/components/PrivateToggle'
 
 interface Profile {
@@ -20,7 +19,6 @@ interface Gallery {
   event_name: string
   slug: string
   is_public: boolean
-  password_plain: string | null
   created_at: string
   media_files: { count: number }[]
   thumbnails: string[]
@@ -280,7 +278,6 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                   <div className="flex items-center gap-2 mt-3" onClick={(e) => e.preventDefault()}>
                     <PrivateToggle
                       isPrivate={!g.is_public}
-                      currentPassword={g.password_plain}
                       onToggle={async (isPrivate, password) => {
                         await togglePublic(g.id, !isPrivate, password)
                       }}
@@ -295,9 +292,6 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                       {copiedSlug === g.slug ? 'Copied!' : 'Copy Link'}
                     </button>
                   </div>
-                  {!g.is_public && g.password_plain && (
-                    <PasswordReveal password={g.password_plain} />
-                  )}
                 </div>
               </Link>
             )

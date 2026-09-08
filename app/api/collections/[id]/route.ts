@@ -19,6 +19,12 @@ export async function GET(
 
   if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // Only the owner or an admin may read a collection's contents.
+  const { data: prof } = await admin.from('profiles').select('role').eq('id', user.id).single()
+  if (prof?.role !== 'admin' && collection.created_by !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   // Fetch the actual photos
   const { data: photos } = await admin
     .from('media_files')
@@ -41,6 +47,14 @@ export async function PUT(
   const body = await request.json()
   const admin = await createServiceRoleClient()
 
+  // Only the owner or an admin may modify a collection.
+  const { data: col } = await admin.from('collections').select('created_by').eq('id', id).single()
+  if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const { data: prof } = await admin.from('profiles').select('role').eq('id', user.id).single()
+  if (prof?.role !== 'admin' && col.created_by !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const updates: Record<string, unknown> = {}
   if (body.restore === true) {
     updates.deleted_at = null
@@ -51,11 +65,9 @@ export async function PUT(
     if (body.isPrivate && body.password) {
       const bcrypt = await import('bcryptjs')
       updates.password_hash = await bcrypt.hash(body.password, 10)
-      updates.password_plain = body.password
     }
     if (!body.isPrivate) {
       updates.password_hash = null
-      updates.password_plain = null
     }
   }
 
@@ -75,6 +87,13 @@ export async function DELETE(
 
   const admin = await createServiceRoleClient()
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
+
+  // Only the owner or an admin may delete a collection.
+  const { data: col } = await admin.from('collections').select('created_by').eq('id', id).single()
+  if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (profile?.role !== 'admin' && col.created_by !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const url = new URL(request.url)
   const permanent = url.searchParams.get('permanent') === 'true'
