@@ -286,7 +286,7 @@ export default function PortalClient({ profile, initialGalleries, userId }: Prop
                   </div>
                   <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5" onClick={(e) => e.preventDefault()}>
                     <button
-                      onClick={() => copyLink(g.slug)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); copyLink(g.slug) }}
                       className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-icy/10 text-icy hover:bg-icy/20 transition-colors"
                     >
                       {copiedSlug === g.slug ? 'Copied!' : 'Copy Link'}

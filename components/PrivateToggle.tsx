@@ -29,7 +29,11 @@ export default function PrivateToggle({ isPrivate, currentPassword, onToggle, la
     setShowModal(false)
   }
 
-  function handleClick() {
+  function handleClick(e: React.MouseEvent) {
+    // These controls live inside a card-wide <Link>; stop the click from
+    // triggering navigation.
+    e.preventDefault()
+    e.stopPropagation()
     if (isPrivate) {
       // Making public — no password needed
       handleMakePublic()
@@ -51,8 +55,8 @@ export default function PrivateToggle({ isPrivate, currentPassword, onToggle, la
       </button>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-navy/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="glass-card rounded-xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-navy/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowModal(false) }}>
+          <div className="glass-card rounded-xl p-6 w-full max-w-sm" onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
             <h3 className="font-[family-name:var(--font-fraunces)] text-lg text-text mb-2">Set Password</h3>
             <p className="text-muted text-sm mb-4">Enter a password to protect this content.</p>
             <div className="mb-4">

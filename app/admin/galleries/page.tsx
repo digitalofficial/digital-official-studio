@@ -283,7 +283,9 @@ export default function AdminGalleries() {
 
                   <div className="flex items-center gap-2 mb-3">
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
                         navigator.clipboard.writeText(`${window.location.origin}/gallery/${g.slug}`)
                         setCopiedSlug(g.slug)
                         setTimeout(() => setCopiedSlug(null), 2000)
@@ -306,7 +308,7 @@ export default function AdminGalleries() {
                     )}
                     {(role === 'admin' || g.created_by === userId) && (
                       <button
-                        onClick={() => handleDelete(g.id)}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(g.id) }}
                         className="px-3 py-2 rounded-lg text-red-400/70 text-sm hover:bg-red-400/10 hover:text-red-400 transition-colors"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
