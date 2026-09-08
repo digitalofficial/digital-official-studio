@@ -1,5 +1,6 @@
 'use client'
 
+import * as tus from 'tus-js-client'
 import { createClient } from '@/lib/supabase/client'
 
 // Client-side upload pipeline. Replaces the old one-file-at-a-time loops with:
@@ -11,6 +12,64 @@ import { createClient } from '@/lib/supabase/client'
 const MAX_DISPLAY_DIM = 2560     // longest edge of the display version
 const DISPLAY_QUALITY = 0.82     // JPEG quality for the display version
 const CONCURRENCY = 4            // simultaneous uploads
+const RESUMABLE_THRESHOLD = 6 * 1024 * 1024   // >6MB or any video → resumable (TUS)
+const BUCKET = 'media'
+
+// Upload one object, choosing the resumable (TUS) path for large files / videos
+// and the fast single-request path for small ones. Resumable uploads chunk the
+// file, retry on network drops, and resume interrupted uploads — which is what
+// large videos need. Requires the signed-in user's access token (RLS: the
+// "Authenticated users can upload media" storage policy applies either way).
+async function uploadObject(
+  supabase: ReturnType<typeof createClient>,
+  path: string,
+  data: Blob | File,
+  contentType: string,
+  accessToken: string | undefined,
+  onProgress?: (fraction: number) => void,
+) {
+  const isVideo = (data as File).type?.startsWith('video/')
+  const useResumable = !!accessToken && (data.size > RESUMABLE_THRESHOLD || isVideo)
+
+  if (!useResumable) {
+    const { error } = await supabase.storage.from(BUCKET).upload(path, data, { contentType })
+    if (error) throw error
+    return
+  }
+
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  await new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(data, {
+      endpoint: `${base}/storage/v1/upload/resumable`,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        ...(anon ? { apikey: anon } : {}),
+        'x-upsert': 'true',
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: 6 * 1024 * 1024, // Supabase requires exactly 6MB chunks
+      metadata: {
+        bucketName: BUCKET,
+        objectName: path,
+        contentType,
+        cacheControl: '3600',
+      },
+      onError: reject,
+      onProgress: (sent, total) => onProgress?.(total ? sent / total : 0),
+      onSuccess: () => resolve(),
+    })
+    upload
+      .findPreviousUploads()
+      .then((prev) => {
+        if (prev.length) upload.resumeFromPreviousUpload(prev[0])
+        upload.start()
+      })
+      .catch(() => upload.start())
+  })
+}
 
 // Returns a compressed JPEG blob for display, or null to reuse the original
 // (non-images, or images already small enough that a re-encode wouldn't help).
@@ -68,6 +127,10 @@ export async function uploadGalleryFiles(
   let done = 0
   const summary: UploadSummary = { ok: 0, failed: 0, failedNames: [] }
 
+  // Access token for resumable (TUS) uploads of large files / videos.
+  const { data: { session } } = await supabase.auth.getSession()
+  const accessToken = session?.access_token
+
   const publicUrl = (path: string) =>
     supabase.storage.from('media').getPublicUrl(path).data.publicUrl
 
@@ -77,12 +140,9 @@ export async function uploadGalleryFiles(
       const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
       const base = `galleries/${opts.galleryId}/${Date.now()}-${Math.random().toString(36).slice(2)}`
 
-      // 1. Upload the full-resolution ORIGINAL.
+      // 1. Upload the full-resolution ORIGINAL (resumable for videos / large files).
       const originalPath = `${base}.${ext}`
-      const orig = await supabase.storage.from('media').upload(originalPath, file, {
-        contentType: file.type || 'application/octet-stream',
-      })
-      if (orig.error) throw orig.error
+      await uploadObject(supabase, originalPath, file, file.type || 'application/octet-stream', accessToken)
       const originalUrl = publicUrl(originalPath)
 
       // 2. For photos, upload a compressed DISPLAY version; else display == original.
@@ -91,10 +151,12 @@ export async function uploadGalleryFiles(
         const display = await makeDisplayVersion(file)
         if (display && display.size < file.size) {
           const displayPath = `${base}-display.jpg`
-          const d = await supabase.storage.from('media').upload(displayPath, display, {
-            contentType: 'image/jpeg',
-          })
-          if (!d.error) displayUrl = publicUrl(displayPath)
+          try {
+            await uploadObject(supabase, displayPath, display, 'image/jpeg', accessToken)
+            displayUrl = publicUrl(displayPath)
+          } catch {
+            // Keep the original as the display source if the compressed upload fails.
+          }
         }
       }
 
