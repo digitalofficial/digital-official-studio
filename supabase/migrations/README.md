@@ -21,10 +21,16 @@ these migrations + a real baseline dump as the source of truth.
 4. **`0002_drop_password_plain.sql`** — `DROP COLUMN password_plain` ×3.
 5. **`0003_fk_on_delete.sql`** — normalises FKs to auth.users/profiles so
    deleting a user who owns galleries can't fail. Run its diagnostic query first.
-6. **`0004_private_media_bucket.sql`** — makes the `media` bucket private + signed
+6. **`0005_media_original_url.sql`** — adds `media_files.original_url` for the
+   "store both" uploader (compressed display + full-res original). Apply BEFORE/
+   with deploying the upload code (the media route writes `original_url`; it
+   retries without it if the column is missing, so it degrades rather than breaks).
+   Backwards-compatible: old rows fall back to `file_url` for downloads.
+7. **`0004_private_media_bucket.sql`** — makes the `media` bucket private + signed
    URLs. **Do not apply until the portfolio-bucket decision (Option A/B) in the
    file is made** — it will break the static home/portfolio images otherwise.
    The Phase 3 code (lib/storage.ts signing) is already live and works either way.
+   (Numbered 0004 but apply it LAST, after the bucket decision.)
 
 ## Status (2026-09-08)
 Authored and committed on branch `backend-redesign`. **None applied to prod yet.**
