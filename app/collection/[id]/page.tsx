@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { signMediaUrls } from '@/lib/storage'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import CollectionView from './CollectionView'
@@ -94,6 +95,8 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
     }
   }
 
+  const signedPhotos = await signMediaUrls(photos || [])
+
   return (
     <div className="min-h-screen bg-navy">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -112,9 +115,9 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {photos && photos.length > 0 ? (
+        {signedPhotos.length > 0 ? (
           <CollectionView
-            items={photos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))}
+            items={signedPhotos.map((p: any) => ({ ...p, file_type: p.file_type as 'photo' | 'video' }))}
             watermarkConfig={watermarkConfig}
           />
         ) : (

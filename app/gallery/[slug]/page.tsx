@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { signMediaUrls } from '@/lib/storage'
 import GalleryView from './GalleryView'
 import PasswordForm from './PasswordForm'
 import Link from 'next/link'
@@ -92,5 +93,6 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
     }
   }
 
-  return <GalleryView gallery={gallery} media={media || []} watermarkConfig={watermarkConfig} />
+  const signedMedia = await signMediaUrls(media || [])
+  return <GalleryView gallery={gallery} media={signedMedia} watermarkConfig={watermarkConfig} />
 }

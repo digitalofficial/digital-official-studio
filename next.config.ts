@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
         hostname: "decqfnklvpoxyfpjyuse.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        // Phase 3: signed URLs for private media (see lib/storage.ts)
+        protocol: "https",
+        hostname: "decqfnklvpoxyfpjyuse.supabase.co",
+        pathname: "/storage/v1/object/sign/**",
+      },
     ],
   },
 };

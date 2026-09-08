@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { signMediaUrls } from '@/lib/storage'
 
 export async function GET(
   request: Request,
@@ -37,7 +38,7 @@ export async function GET(
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  return NextResponse.json({ ...gallery, media: media || [] })
+  return NextResponse.json({ ...gallery, media: await signMediaUrls(media || []) })
 }
 
 export async function PUT(
