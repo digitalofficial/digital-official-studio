@@ -22,20 +22,30 @@ export async function POST(
   }
 
   const body = await request.json()
-  const { fileUrl, fileType, caption, isPortfolio, name } = body
+  const { fileUrl, originalUrl, fileType, caption, isPortfolio, name } = body
 
   if (!fileUrl || !fileType) {
     return NextResponse.json({ error: 'Missing file info' }, { status: 400 })
   }
-  const { data, error } = await admin.from('media_files').insert({
+
+  const row: Record<string, unknown> = {
     gallery_id: id,
     file_url: fileUrl,
+    original_url: originalUrl || fileUrl,
     file_type: fileType,
     caption: caption || null,
     name: name || null,
     is_portfolio: isPortfolio || false,
     uploaded_by: user.id,
-  }).select().single()
+  }
+
+  let { data, error } = await admin.from('media_files').insert(row).select().single()
+
+  // Tolerate the original_url column not existing yet (migration 0005 not applied).
+  if (error && /original_url/.test(error.message)) {
+    delete row.original_url
+    ;({ data, error } = await admin.from('media_files').insert(row).select().single())
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

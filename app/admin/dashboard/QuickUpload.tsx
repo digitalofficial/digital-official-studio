@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { uploadGalleryFiles } from '@/lib/upload'
 
 export default function QuickUpload() {
   const [step, setStep] = useState<'idle' | 'files-selected' | 'saving'>('idle')
@@ -49,32 +49,12 @@ export default function QuickUpload() {
     }
 
     const gallery = await res.json()
-    const supabase = createClient()
 
-    // Upload files
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      setProgress(`Uploading ${i + 1} of ${files.length}...`)
-
-      const fileType = file.type.startsWith('video/') ? 'video' : 'photo'
-      const ext = file.name.split('.').pop()
-      const filePath = `galleries/${gallery.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-
-      const { error } = await supabase.storage
-        .from('media')
-        .upload(filePath, file, { contentType: file.type })
-
-      if (error) continue
-
-      const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(filePath)
-      const autoName = `${eventName} - ${fileType === 'video' ? 'Video' : 'Image'} ${i + 1}`
-
-      await fetch(`/api/admin/galleries/${gallery.id}/media`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl: publicUrl, fileType, name: autoName }),
-      })
-    }
+    await uploadGalleryFiles(Array.from(files), {
+      galleryId: gallery.id,
+      eventName,
+      onProgress: (done, total) => setProgress(`Uploading ${done} of ${total}...`),
+    })
 
     setProgress(null)
     router.push(`/admin/galleries/${gallery.id}`)

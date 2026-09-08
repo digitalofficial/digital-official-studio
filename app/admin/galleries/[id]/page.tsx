@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { uploadGalleryFiles } from '@/lib/upload'
 import Lightbox from '@/components/Lightbox'
 
 interface Gallery {
@@ -88,45 +89,17 @@ export default function GalleryDetail() {
     setUploading(true)
     setUploadProgress({ current: 0, total: files.length })
 
-    const supabase = createClient()
-
     const existingCount = gallery?.media.length || 0
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      setUploadProgress({ current: i + 1, total: files.length })
-
-      const fileType = file.type.startsWith('video/') ? 'video' : 'photo'
-      const ext = file.name.split('.').pop()
-      const filePath = `galleries/${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-
-      // Upload directly to Supabase Storage from browser (no size limit)
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file, { contentType: file.type })
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError)
-        continue
-      }
-
-      const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(filePath)
-
-      const num = existingCount + i + 1
-      const autoName = `${gallery?.event_name || 'Gallery'} - ${fileType === 'video' ? 'Video' : 'Image'} ${num}`
-
-      // Save DB record via API
-      await fetch(`/api/admin/galleries/${id}/media`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileUrl: publicUrl,
-          fileType,
-          caption: uploadCaption,
-          name: autoName,
-          isPortfolio: uploadPortfolio,
-        }),
-      })
+    const summary = await uploadGalleryFiles(Array.from(files), {
+      galleryId: id,
+      eventName: gallery?.event_name,
+      startIndex: existingCount,
+      caption: uploadCaption,
+      isPortfolio: uploadPortfolio,
+      onProgress: (done, total) => setUploadProgress({ current: done, total }),
+    })
+    if (summary.failed) {
+      alert(`${summary.failed} of ${summary.ok + summary.failed} file(s) failed to upload:\n${summary.failedNames.join('\n')}`)
     }
 
     setUploadCaption('')
