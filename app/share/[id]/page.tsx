@@ -34,6 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title,
     description: 'Shared photo gallery from Digital Official Studio',
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       description: 'Shared photo gallery from Digital Official Studio',

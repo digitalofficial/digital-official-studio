@@ -12,7 +12,15 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
 });
 
+// Absolute base for OG/Twitter images and canonical URLs. Set NEXT_PUBLIC_SITE_URL
+// to the production domain once recorded; Vercel exposes VERCEL_URL on every deploy
+// as a fallback so relative image paths (e.g. /api/og) resolve during previews too.
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Digital Official Studio | Photography & Videography",
   description: "Every moment, beautifully captured. Professional photography and videography for Sweet 16s, Quinceañeras, parties, and special events.",
   icons: {

@@ -48,7 +48,9 @@ export default function ContactForm() {
       form.reset()
     } catch {
       setStatus('error')
-      setMessage('Something went wrong. Please try again.')
+      // Never leave a lead at a dead end — give a direct way to reach the studio.
+      const contact = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'digitalofficialstudio@gmail.com'
+      setMessage(`Something went wrong sending your request. Please email us directly at ${contact} and we'll take care of you.`)
     }
   }
 

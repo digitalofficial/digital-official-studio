@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function PUT(
@@ -83,6 +84,8 @@ export async function PUT(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // A portfolio toggle / caption / restore can change what the static home + /portfolio show.
+  revalidatePath('/', 'layout')
   return NextResponse.json(data)
 }
 
@@ -135,6 +138,7 @@ export async function DELETE(
 
     const { error } = await admin.from('media_files').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    revalidatePath('/', 'layout')
     return NextResponse.json({ success: true, permanent: true })
   }
 
@@ -145,5 +149,6 @@ export async function DELETE(
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/', 'layout')
   return NextResponse.json({ success: true, trashed: true })
 }

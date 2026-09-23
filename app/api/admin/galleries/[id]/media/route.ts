@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function POST(
@@ -48,5 +49,7 @@ export async function POST(
   }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // A newly-uploaded portfolio image must reach the static home + /portfolio.
+  if (row.is_portfolio) revalidatePath('/', 'layout')
   return NextResponse.json(data)
 }

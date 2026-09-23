@@ -8,6 +8,9 @@ export const metadata = {
   description: 'Browse our photography and videography portfolio.',
 }
 
+// Kept fresh on write via revalidatePath('/','layout'); ISR backstop against drift.
+export const revalidate = 3600
+
 export default async function PortfolioPage() {
   const supabase = await createServiceRoleClient()
 

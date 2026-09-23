@@ -8,6 +8,10 @@ import ContactForm from '@/components/ContactForm'
 import Footer from '@/components/Footer'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 
+// Portfolio changes reach this static page immediately via revalidatePath('/','layout')
+// on the media write routes; this ISR window is a drift-proof backstop.
+export const revalidate = 3600
+
 export default async function HomePage() {
   const supabase = await createServiceRoleClient()
   const { data: photos } = await supabase

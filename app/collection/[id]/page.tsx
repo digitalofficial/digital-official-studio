@@ -13,6 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const title = `${data?.name || 'Collection'} | Digital Official Studio`
   return {
     title,
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       images: data?.gallery_id ? [`/api/og?galleryId=${data.gallery_id}`] : [],
