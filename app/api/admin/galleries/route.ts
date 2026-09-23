@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { signMediaUrls } from '@/lib/storage'
 
 export async function GET() {
   const supabase = await createServerSupabaseClient()
@@ -60,10 +61,17 @@ export async function GET() {
       }
     })
 
+    // The media bucket is private (0004) — cover thumbnails must be signed, or
+    // next/image gets a public URL that 400s and the dashboard shows blank cards.
+    const allThumbs = Object.values(thumbMap).flat().map((u) => ({ file_url: u }))
+    const signed = await signMediaUrls(allThumbs)
+    const signedByOriginal = new Map<string, string>()
+    allThumbs.forEach((t, i) => signedByOriginal.set(t.file_url, signed[i].file_url))
+
     return NextResponse.json(data.map((g: any) => ({
       ...g,
       media_files: [{ count: countMap[g.id] || 0 }],
-      thumbnails: thumbMap[g.id] || [],
+      thumbnails: (thumbMap[g.id] || []).map((u) => signedByOriginal.get(u) || u),
     })))
   }
 
