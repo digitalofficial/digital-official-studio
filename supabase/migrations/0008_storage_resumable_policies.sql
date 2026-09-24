@@ -14,19 +14,25 @@
 -- bucket, and (idempotently) re-assert the storage.objects write policies.
 
 -- Multipart upload tracking (resumable/TUS) ----------------------------------
+-- NOTE: a bucket_id='media' predicate here does NOT work — Supabase's TUS handler
+-- doesn't populate bucket_id on the tracking row the way a plain insert would, so
+-- the WITH CHECK evaluates false/null and every resumable upload 403s. These are
+-- ephemeral upload-session rows; the real gate is storage.objects at finalization
+-- (authenticated + bucket_id='media'), so an unconditional authenticated policy
+-- here is safe. (Superseded the earlier bucket-scoped version, which was denied.)
 drop policy if exists "authenticated manage multipart uploads (media)" on storage.s3_multipart_uploads;
-create policy "authenticated manage multipart uploads (media)"
+drop policy if exists "authenticated manage multipart uploads" on storage.s3_multipart_uploads;
+create policy "authenticated manage multipart uploads"
   on storage.s3_multipart_uploads for all
   to authenticated
-  using (bucket_id = 'media')
-  with check (bucket_id = 'media');
+  using (true) with check (true);
 
 drop policy if exists "authenticated manage multipart parts (media)" on storage.s3_multipart_uploads_parts;
-create policy "authenticated manage multipart parts (media)"
+drop policy if exists "authenticated manage multipart parts" on storage.s3_multipart_uploads_parts;
+create policy "authenticated manage multipart parts"
   on storage.s3_multipart_uploads_parts for all
   to authenticated
-  using (bucket_id = 'media')
-  with check (bucket_id = 'media');
+  using (true) with check (true);
 
 -- Re-assert the object write policies (idempotent; harmless if already present) --
 drop policy if exists "Authenticated users can upload media" on storage.objects;
