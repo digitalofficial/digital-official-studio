@@ -50,6 +50,18 @@ export default function MasonryGrid({ items, showDownload = false, watermarkConf
       ? 'object-contain transition-transform duration-500'
       : 'object-cover transition-transform duration-500 group-hover:scale-[1.02]'
 
+  // Force a real download cross-origin: the HTML `download` attribute is ignored for
+  // cross-origin (Supabase) URLs, so append Supabase's `download=<filename>` param — the
+  // storage server then responds with Content-Disposition: attachment and the browser saves.
+  function downloadHref(item: MediaItem): string {
+    const path = item.file_url.split('?')[0]
+    const ext = (path.split('.').pop() || (item.file_type === 'video' ? 'mp4' : 'jpg')).slice(0, 5)
+    const base = (item.name || 'photo').replace(/[^\w.\- ]+/g, '_').trim() || 'photo'
+    const filename = base.toLowerCase().endsWith(`.${ext.toLowerCase()}`) ? base : `${base}.${ext}`
+    const sep = item.file_url.includes('?') ? '&' : '?'
+    return `${item.file_url}${sep}download=${encodeURIComponent(filename)}`
+  }
+
   function Tile({ item, idx }: { item: MediaItem; idx: number }) {
     const isVideo = item.file_type === 'video'
     const hasWatermark = !isVideo && (item.watermark_enabled || false)
@@ -107,9 +119,8 @@ export default function MasonryGrid({ items, showDownload = false, watermarkConf
         </div>
         {canDownload && (
           <a
-            href={item.file_url}
+            href={downloadHref(item)}
             download
-            target="_blank"
             rel="noopener noreferrer"
             className="absolute top-3 right-3 w-10 h-10 rounded-full bg-navy/80 backdrop-blur-sm flex items-center justify-center text-icy md:opacity-0 md:group-hover:opacity-100 transition-opacity"
             onClick={(e) => e.stopPropagation()}
