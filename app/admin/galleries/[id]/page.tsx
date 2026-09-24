@@ -16,6 +16,8 @@ interface Gallery {
   is_public: boolean
   category: string
   created_by: string | null
+  show_social?: boolean | null
+  layout?: string | null
   media: MediaFile[]
 }
 
@@ -58,6 +60,26 @@ export default function GalleryDetail() {
   const [collectionPrivate, setCollectionPrivate] = useState(false)
   const [collectionPassword, setCollectionPassword] = useState('')
   const [savingCollection, setSavingCollection] = useState(false)
+  const [savingDisplay, setSavingDisplay] = useState(false)
+
+  async function updateDisplay(patch: { showSocial?: boolean; layout?: string }) {
+    if (!gallery) return
+    setSavingDisplay(true)
+    // Optimistic — reflect the choice immediately, roll back on failure.
+    const prev = gallery
+    setGallery({
+      ...gallery,
+      ...(patch.showSocial !== undefined ? { show_social: patch.showSocial } : {}),
+      ...(patch.layout !== undefined ? { layout: patch.layout } : {}),
+    })
+    const res = await fetch(`/api/admin/galleries/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    if (!res.ok) setGallery(prev)
+    setSavingDisplay(false)
+  }
 
   const fetchGallery = useCallback(async () => {
     const res = await fetch(`/api/admin/galleries/${id}`)
@@ -344,6 +366,60 @@ export default function GalleryDetail() {
         </div>
         <div />
       </div>
+
+      {/* Display settings — how the client-facing gallery page looks */}
+      {role === 'admin' && (
+        <div className="glass-card rounded-xl p-6 mb-8">
+          <h2 className="text-text font-medium mb-4">Display Settings</h2>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs text-silver mb-2">Layout</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: 'masonry', label: 'Masonry' },
+                  { key: 'grid', label: 'Grid' },
+                  { key: 'editorial', label: 'Editorial' },
+                ] as const).map((opt) => {
+                  const active = (gallery.layout || 'masonry') === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => updateDisplay({ layout: opt.key })}
+                      disabled={savingDisplay}
+                      className={`text-xs min-h-10 rounded-lg border transition-colors disabled:opacity-50 ${
+                        active
+                          ? 'border-icy bg-icy/10 text-icy'
+                          : 'border-white/10 bg-navy text-silver hover:border-white/20'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-muted text-xs mt-2">
+                Masonry = varied heights · Grid = uniform squares · Editorial = large single column.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs text-silver mb-2">Sharing</label>
+              <label className="flex items-center gap-2 cursor-pointer min-h-10">
+                <input
+                  type="checkbox"
+                  checked={gallery.show_social !== false}
+                  onChange={(e) => updateDisplay({ showSocial: e.target.checked })}
+                  disabled={savingDisplay}
+                  className="w-4 h-4 rounded border-white/10 bg-navy text-icy focus:ring-icy"
+                />
+                <span className="text-sm text-silver">Show social share buttons (Facebook / X / WhatsApp)</span>
+              </label>
+              <p className="text-muted text-xs mt-2">
+                Off hides the social icons on the client gallery; the Copy Link button always stays.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upload Section */}
       <div className="glass-card rounded-xl p-6 mb-8">

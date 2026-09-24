@@ -71,6 +71,10 @@ export async function PUT(
   if (typeof body.isPublic === 'boolean') updates.is_public = body.isPublic
   if (typeof body.watermarkEnabled === 'boolean') updates.watermark_enabled = body.watermarkEnabled
   if (typeof body.isPaid === 'boolean') updates.is_paid = body.isPaid
+  if (typeof body.showSocial === 'boolean') updates.show_social = body.showSocial
+  if (typeof body.layout === 'string' && ['masonry', 'grid', 'editorial'].includes(body.layout)) {
+    updates.layout = body.layout
+  }
   if (body.password) {
     updates.password_hash = await bcrypt.hash(body.password, 10)
   }
@@ -103,12 +107,25 @@ export async function PUT(
     }
   }
 
-  const { data, error } = await admin
+  let { data, error } = await admin
     .from('client_galleries')
     .update(updates)
     .eq('id', id)
     .select()
     .single()
+
+  // Tolerate the display-settings columns not existing yet (migration 0007 not applied):
+  // strip them and retry so the rest of the edit still saves.
+  if (error && /show_social|layout/.test(error.message)) {
+    delete updates.show_social
+    delete updates.layout
+    ;({ data, error } = await admin
+      .from('client_galleries')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single())
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
