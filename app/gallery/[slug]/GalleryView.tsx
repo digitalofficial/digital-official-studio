@@ -1,6 +1,6 @@
 'use client'
 
-import MasonryGrid from '@/components/MasonryGrid'
+import MasonryGrid, { type GalleryLayout } from '@/components/MasonryGrid'
 import ShareButtons from '@/components/ShareButtons'
 import { type WatermarkConfig } from '@/components/WatermarkOverlay'
 import Link from 'next/link'
@@ -12,6 +12,8 @@ interface Gallery {
   client_name: string
   event_name: string
   slug: string
+  show_social?: boolean | null
+  layout?: string | null
 }
 
 interface MediaItem {
@@ -41,6 +43,13 @@ export default function GalleryView({ gallery, media, watermarkConfig }: Props) 
   const [sharePassword, setSharePassword] = useState('')
 
   const photos = media.filter((m) => m.file_type === 'photo')
+  // Per-gallery display settings (default: social on, masonry layout). Undefined when
+  // the columns aren't in the DB yet, so fall back to the defaults.
+  const showSocial = gallery.show_social !== false
+  const allowed: GalleryLayout[] = ['masonry', 'grid', 'editorial']
+  const layout: GalleryLayout = allowed.includes(gallery.layout as GalleryLayout)
+    ? (gallery.layout as GalleryLayout)
+    : 'masonry'
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -96,20 +105,23 @@ export default function GalleryView({ gallery, media, watermarkConfig }: Props) 
   return (
     <div className="min-h-screen bg-navy">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-muted hover:text-icy transition-colors">
+        {/* Header — stacks on mobile so nothing overflows the viewport (UI-UX house rules) */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-muted hover:text-icy transition-colors self-start min-h-10">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </Link>
-          <div className="flex items-center gap-2">
-            <ShareButtons url={typeof window !== 'undefined' ? window.location.href : ''} text={`Check out ${gallery.event_name} by Digital Official Studio`} />
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            {showSocial && (
+              <ShareButtons url={typeof window !== 'undefined' ? window.location.href : ''} text={`Check out ${gallery.event_name} by Digital Official Studio`} />
+            )}
             <button
               onClick={copyGalleryLink}
-              className="text-xs px-3 py-1.5 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors flex items-center gap-1.5"
+              className="text-xs px-3.5 min-h-10 rounded-lg bg-card text-silver hover:bg-card-hover transition-colors flex items-center gap-1.5"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
               {copiedLink ? 'Copied!' : 'Copy Link'}
@@ -117,7 +129,7 @@ export default function GalleryView({ gallery, media, watermarkConfig }: Props) 
             {photos.length > 0 && (
               <button
                 onClick={() => selectMode ? cancelSelect() : setSelectMode(true)}
-                className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                className={`text-xs px-3.5 min-h-10 rounded-lg transition-colors ${
                   selectMode ? 'bg-icy/10 text-icy' : 'bg-card text-silver hover:bg-card-hover'
                 }`}
               >
@@ -273,7 +285,7 @@ export default function GalleryView({ gallery, media, watermarkConfig }: Props) 
             )}
           </>
         ) : (
-          <MasonryGrid items={media} showDownload watermarkConfig={watermarkConfig} />
+          <MasonryGrid items={media} showDownload watermarkConfig={watermarkConfig} layout={layout} />
         )}
 
         <div className="text-center mt-16 pt-8 border-t border-white/5">

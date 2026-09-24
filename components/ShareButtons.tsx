@@ -26,7 +26,7 @@ export default function ShareButtons({ url, text = 'Check out these photos from 
         href={`https://www.facebook.com/sharer/sharer.php?u=${encoded}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
         title="Share on Facebook"
       >
         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@ export default function ShareButtons({ url, text = 'Check out these photos from 
         href={`https://twitter.com/intent/tweet?url=${encoded}&text=${encodedText}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
         title="Share on X"
       >
         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ export default function ShareButtons({ url, text = 'Check out these photos from 
         href={`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
         title="Share on WhatsApp"
       >
         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@ export default function ShareButtons({ url, text = 'Check out these photos from 
       {/* Copy Link */}
       <button
         onClick={copyLink}
-        className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
         title={copied ? 'Copied!' : 'Copy link'}
       >
         {copied ? (
