@@ -85,7 +85,7 @@ export default function PortalGalleryDetail() {
       onProgress: (done, total) => setUploadProgress({ current: done, total }),
     })
     if (summary.failed) {
-      alert(`${summary.failed} of ${summary.ok + summary.failed} file(s) failed to upload:\n${summary.failedNames.join('\n')}`)
+      alert(`${summary.failed} of ${summary.ok + summary.failed} file(s) failed to upload:\n${summary.failedNames.join('\n')}${summary.firstError ? `\n\nReason: ${summary.firstError}` : ''}`)
     }
 
     setUploadCaption('')

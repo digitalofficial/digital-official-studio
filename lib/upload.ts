@@ -115,6 +115,18 @@ export interface UploadSummary {
   ok: number
   failed: number
   failedNames: string[]
+  firstError?: string
+}
+
+// Pull a human-readable reason out of whatever the storage/TUS/fetch layer threw.
+function errorMessage(e: unknown): string {
+  if (!e) return 'Unknown error'
+  // tus-js-client wraps the server response on e.originalResponse
+  const anyE = e as { message?: string; originalResponse?: { getStatus?: () => number; getBody?: () => string } }
+  const status = anyE.originalResponse?.getStatus?.()
+  const body = anyE.originalResponse?.getBody?.()
+  if (status) return `HTTP ${status}${body ? ` — ${String(body).slice(0, 200)}` : ''}`
+  return anyE.message || String(e)
 }
 
 export async function uploadGalleryFiles(
@@ -181,6 +193,7 @@ export async function uploadGalleryFiles(
       console.error('Upload failed for', file.name, e)
       summary.failed++
       summary.failedNames.push(file.name)
+      if (!summary.firstError) summary.firstError = errorMessage(e)
     } finally {
       done++
       opts.onProgress?.(done, total)
