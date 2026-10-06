@@ -12,7 +12,14 @@ import { createClient } from '@/lib/supabase/client'
 const MAX_DISPLAY_DIM = 2560     // longest edge of the display version
 const DISPLAY_QUALITY = 0.82     // JPEG quality for the display version
 const CONCURRENCY = 4            // simultaneous uploads
-const RESUMABLE_THRESHOLD = 6 * 1024 * 1024   // >6MB or any video → resumable (TUS)
+// Route photos (even large DJI/drone JPGs) through the SIMPLE upload path — it runs
+// as the authenticated user and works. The resumable/TUS path currently can't
+// complete here: Supabase's Storage API inserts the final storage.objects row under
+// an unprivileged role (not the user), so RLS 403s it regardless of client headers
+// or policies. Only genuinely huge files (near the 50MB standard-upload ceiling) and
+// videos still take the resumable path. Raise this back to ~6MB once the TUS/auth
+// issue is resolved server-side.
+const RESUMABLE_THRESHOLD = 45 * 1024 * 1024   // >45MB or any video → resumable (TUS)
 const BUCKET = 'media'
 
 // Upload one object, choosing the resumable (TUS) path for large files / videos
