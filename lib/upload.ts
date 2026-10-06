@@ -38,14 +38,18 @@ async function uploadObject(
   }
 
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   await new Promise<void>((resolve, reject) => {
     const upload = new tus.Upload(data, {
       endpoint: `${base}/storage/v1/upload/resumable`,
       retryDelays: [0, 3000, 5000, 10000, 20000],
       headers: {
         authorization: `Bearer ${accessToken}`,
-        ...(anon ? { apikey: anon } : {}),
+        // Send the USER's access token as the apikey — NOT the anon key. Supabase's
+        // storage/TUS gateway resolves the DB role from the apikey, so an anon apikey
+        // makes the resumable object insert run as `anon`, which RLS denies ("new row
+        // violates row-level security policy for table objects" / HTTP 403) even though
+        // the bearer is a valid authenticated user. The <6MB path doesn't hit this.
+        apikey: accessToken,
         'x-upsert': 'true',
       },
       uploadDataDuringCreation: true,
